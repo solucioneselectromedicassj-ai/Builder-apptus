@@ -2,307 +2,428 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>AppTus Builder</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg: #0F1923; --sidebar: #0D1720; --surface: #162332; --surface2: #1E3148;
-  --border: #243447; --accent: #2DD4BF; --text: #E2E8F0; --text2: #8EA8C0;
-  --text3: #4A6280; --danger: #EF4444; --warn: #F59E0B; --r: 6px;
-  --font: system-ui, -apple-system, 'Segoe UI', sans-serif;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0F1923;--s1:#0D1720;--s2:#162332;--s3:#1E3148;
+  --border:#243447;--accent:#2DD4BF;--accentd:#1a8a7a;
+  --text:#E2E8F0;--t2:#8EA8C0;--t3:#4A6280;
+  --red:#EF4444;--green:#10B981;--warn:#F59E0B;
+  --r:10px;--font:system-ui,-apple-system,'Segoe UI',sans-serif;
 }
-body { font-family: var(--font); background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
+html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--bg);color:var(--text);}
 
-/* LOGIN */
-#login-screen { display: flex; align-items: center; justify-content: center; height: 100vh; }
-.login-card { width: 340px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 40px 32px; }
-.brand { font-size: 11px; font-weight: 700; letter-spacing: .1em; color: var(--accent); text-transform: uppercase; margin-bottom: 6px; }
-.login-card h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
-.login-card p { font-size: 13px; color: var(--text2); margin-bottom: 28px; }
+/* ── SCREEN SYSTEM ── */
+#root{position:relative;width:100%;height:100%;overflow:hidden;}
+.screen{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  background:var(--bg);overflow:hidden;
+  transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);
+  will-change:transform;
+}
+.screen.active{transform:translateX(0);}
+.screen.behind{transform:translateX(-30%);}
 
-/* INPUTS */
-label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 5px; }
-input, textarea, select { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--r); color: var(--text); font-family: var(--font); font-size: 13px; padding: 8px 11px; outline: none; transition: border-color .15s; }
-input:focus, textarea:focus, select:focus { border-color: var(--accent); }
-textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
-select option { background: var(--surface); }
-.field { margin-bottom: 14px; }
+/* ── TOPBAR ── */
+.topbar{
+  display:flex;align-items:center;gap:10px;padding:14px 16px;
+  background:var(--s1);border-bottom:1px solid var(--border);
+  flex-shrink:0;min-height:56px;
+}
+.topbar-title{flex:1;font-size:16px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.topbar-sub{font-size:11px;color:var(--t3);}
+.back-btn{
+  width:36px;height:36px;border-radius:50%;border:none;background:var(--s3);
+  color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
 
-/* BUTTONS */
-.btn { display: inline-flex; align-items: center; gap: 5px; padding: 7px 14px; border-radius: var(--r); font-family: var(--font); font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: opacity .15s, background .15s; white-space: nowrap; }
-.btn:disabled { opacity: .45; cursor: not-allowed; }
-.btn-primary { background: var(--accent); color: #0F1923; }
-.btn-primary:hover:not(:disabled) { background: #25b5a4; }
-.btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
-.btn-ghost:hover:not(:disabled) { background: var(--surface2); color: var(--text); }
-.btn-danger { background: transparent; color: var(--danger); border: 1px solid #3d1212; }
-.btn-danger:hover:not(:disabled) { background: #1c0808; }
-.btn-green { background: #064e3b; color: #6ee7b7; border: 1px solid #065f46; }
-.btn-green:hover:not(:disabled) { background: #065f46; }
-.btn-sm { padding: 4px 10px; font-size: 11px; }
-.btn-full { width: 100%; justify-content: center; }
+/* ── SCROLLABLE BODY ── */
+.screen-body{flex:1;overflow-y:auto;padding:12px;}
+.screen-body-notop{flex:1;overflow-y:auto;}
 
-/* APP */
-#app { display: none; height: 100vh; }
-#app.on { display: flex; }
+/* ── INPUTS ── */
+label{display:block;font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;}
+input,textarea,select{
+  width:100%;background:var(--s1);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);font-family:var(--font);
+  font-size:14px;padding:10px 12px;outline:none;transition:border-color .15s;
+}
+input:focus,textarea:focus,select:focus{border-color:var(--accent);}
+textarea{resize:vertical;min-height:90px;line-height:1.5;}
+select option{background:var(--s2);}
+.field{margin-bottom:14px;}
+.row2{display:flex;gap:10px;}.row2>.field{flex:1;}
 
-/* SIDEBAR */
-#sidebar { width: 252px; flex-shrink: 0; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
-.sb-head { padding: 14px 14px 12px; border-bottom: 1px solid var(--border); }
-.sb-brand { font-size: 10px; font-weight: 700; color: var(--accent); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 2px; }
-.sb-sub { font-size: 11px; color: var(--text3); }
-.sb-search { padding: 8px 10px; border-bottom: 1px solid var(--border); }
-.sb-search input { font-size: 12px; padding: 6px 9px; }
-#mod-list { flex: 1; overflow-y: auto; padding: 5px; }
-.mod-item { padding: 9px 10px; border-radius: var(--r); cursor: pointer; margin-bottom: 2px; border: 1px solid transparent; transition: background .1s; }
-.mod-item:hover { background: var(--surface); }
-.mod-item.active { background: var(--surface); border-color: var(--accent); }
-.mod-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mod-meta { display: flex; gap: 6px; align-items: center; margin-top: 3px; flex-wrap: wrap; }
-.tag { font-size: 10px; color: var(--text3); background: var(--surface2); padding: 1px 6px; border-radius: 3px; }
-.badge { font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 99px; text-transform: uppercase; }
-.b-on  { background: #0d2a3a; color: var(--accent); }
-.b-off { background: #112311; color: #4ade80; }
-.sb-foot { padding: 9px 10px; border-top: 1px solid var(--border); display: flex; gap: 7px; }
+/* ── BUTTONS ── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:10px 18px;border-radius:8px;font-family:var(--font);
+  font-size:14px;font-weight:600;cursor:pointer;border:none;
+  transition:opacity .15s,transform .1s;-webkit-tap-highlight-color:transparent;
+}
+.btn:active{transform:scale(.96);}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-primary{background:var(--accent);color:#0F1923;}
+.btn-ghost{background:transparent;color:var(--t2);border:1px solid var(--border);}
+.btn-ghost:active{background:var(--s3);}
+.btn-red{background:transparent;color:var(--red);border:1px solid #3d1212;}
+.btn-red:active{background:#1c0808;}
+.btn-green{background:#064e3b;color:#6ee7b7;border:1px solid #065f46;}
+.btn-sm{padding:7px 13px;font-size:12px;border-radius:6px;}
+.btn-full{width:100%;}
+.btn-icon{width:40px;height:40px;padding:0;border-radius:50%;font-size:18px;}
 
-/* MAIN */
-#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
-#no-sel { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text3); gap: 10px; text-align: center; }
-#editor { display: none; flex: 1; flex-direction: column; overflow: hidden; }
-#editor.on { display: flex; }
+/* ── LOGIN ── */
+#s-login{align-items:center;justify-content:center;transform:translateX(0);}
+.login-card{
+  width:100%;max-width:340px;background:var(--s2);
+  border:1px solid var(--border);border-radius:16px;padding:36px 28px;margin:16px;
+}
+.login-brand{font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px;}
+.login-card h1{font-size:24px;font-weight:700;margin-bottom:4px;}
+.login-card p{font-size:13px;color:var(--t2);margin-bottom:28px;}
 
-/* MOD HEADER */
-#mod-head { padding: 11px 16px; border-bottom: 1px solid var(--border); background: var(--surface); display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
-.head-fields { flex: 1; display: flex; gap: 8px; flex-wrap: wrap; min-width: 0; }
-.head-fields input, .head-fields select { font-size: 12px; padding: 6px 9px; }
-.head-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+/* ── MODULE CARDS ── */
+.mod-card{
+  background:var(--s2);border:1px solid var(--border);border-radius:var(--r);
+  padding:14px;margin-bottom:10px;cursor:pointer;
+  transition:border-color .15s,background .15s;-webkit-tap-highlight-color:transparent;
+  display:flex;align-items:center;gap:12px;
+}
+.mod-card:active{background:var(--s3);border-color:var(--accent);}
+.mod-icon{font-size:28px;flex-shrink:0;}
+.mod-info{flex:1;min-width:0;}
+.mod-name{font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mod-sub{font-size:12px;color:var(--t2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mod-tags{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap;}
+.tag{font-size:10px;color:var(--t3);background:var(--s3);padding:2px 7px;border-radius:4px;}
+.badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;text-transform:uppercase;}
+.b-on{background:#0d2a3a;color:var(--accent);}
+.b-off{background:#1a2a1a;color:#4ade80;}
+.mod-arrow{color:var(--t3);font-size:20px;flex-shrink:0;}
 
-/* TABS */
-#tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--sidebar); padding: 0 16px; overflow-x: auto; }
-.tab { padding: 10px 14px; font-size: 13px; font-weight: 500; color: var(--text2); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .15s, border-color .15s; font-family: var(--font); white-space: nowrap; }
-.tab:hover { color: var(--text); }
-.tab.on { color: var(--accent); border-bottom-color: var(--accent); }
+/* ── FAB ── */
+.fab-wrap{position:absolute;bottom:20px;right:16px;display:flex;flex-direction:column;align-items:flex-end;gap:10px;}
+.fab{
+  width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:22px;
+  box-shadow:0 4px 16px rgba(0,0,0,.4);transition:transform .15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.fab:active{transform:scale(.9);}
+.fab-primary{background:var(--accent);color:#0F1923;}
+.fab-notes{background:var(--s3);color:var(--t2);font-size:18px;}
 
-/* PANELS */
-#panels { flex: 1; overflow: hidden; display: flex; }
-.panel { display: none; width: 100%; }
-.panel.on { display: flex; }
+/* ── SEARCH ── */
+.search-wrap{padding:10px 12px;background:var(--s1);border-bottom:1px solid var(--border);}
+.search-wrap input{font-size:13px;padding:8px 12px;border-radius:20px;}
 
-/* SHARED LIST+EDIT layout */
-.list-col { width: 185px; flex-shrink: 0; border-right: 1px solid var(--border); background: var(--sidebar); display: flex; flex-direction: column; }
-.list-head { padding: 9px 10px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; }
-.list-items { flex: 1; overflow-y: auto; padding: 5px; }
-.list-item { padding: 7px 9px; border-radius: var(--r); cursor: pointer; margin-bottom: 2px; border: 1px solid transparent; }
-.list-item:hover { background: var(--surface); }
-.list-item.active { background: var(--surface); border-color: var(--accent); }
-.li-num { font-size: 10px; color: var(--text3); }
-.li-title { font-size: 12px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.li-type { font-size: 10px; color: var(--text3); }
-.edit-col { flex: 1; overflow-y: auto; padding: 20px; }
-.panel-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
-.panel-btns { display: flex; gap: 5px; }
+/* ── MODULE META FORM ── */
+.meta-form{background:var(--s2);border-bottom:1px solid var(--border);padding:14px;}
 
-/* IMAGE UPLOAD */
-.upload-area { border: 2px dashed var(--border); border-radius: var(--r); padding: 18px; text-align: center; cursor: pointer; transition: border-color .15s; }
-.upload-area:hover, .upload-area.drag { border-color: var(--accent); background: rgba(45,212,191,.04); }
-.img-prev { max-width: 100%; max-height: 190px; border-radius: var(--r); display: block; margin: 0 auto 10px; object-fit: contain; }
+/* ── TABS ── */
+.tabs{display:flex;background:var(--s1);border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0;}
+.tab{
+  flex:1;padding:12px 8px;font-size:13px;font-weight:600;color:var(--t2);
+  cursor:pointer;border:none;background:none;border-bottom:3px solid transparent;
+  margin-bottom:-1px;transition:color .15s,border-color .15s;font-family:var(--font);
+  white-space:nowrap;-webkit-tap-highlight-color:transparent;
+}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent);}
 
-/* ZONAS */
-#p-zonas { flex-direction: row; }
-#zona-canvas { flex: 1; overflow: auto; padding: 16px; display: flex; flex-direction: column; }
-#zona-toolbar { display: flex; gap: 9px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
-#hs-wrap { position: relative; display: inline-block; user-select: none; }
-#hs-img { display: block; max-width: 100%; max-height: 480px; border-radius: var(--r); }
-#zona-noimg { width: 100%; height: 260px; border: 2px dashed var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text3); font-size: 13px; text-align: center; padding: 20px; }
-.hs-dot { position: absolute; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); border: 3px solid #0F1923; transform: translate(-50%,-50%); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #0F1923; transition: transform .1s; z-index: 2; }
-.hs-dot:hover { transform: translate(-50%,-50%) scale(1.2); }
-.hs-dot.sel { background: var(--warn); }
-#zona-side { width: 265px; flex-shrink: 0; border-left: 1px solid var(--border); background: var(--sidebar); overflow-y: auto; padding: 13px; display: flex; flex-direction: column; gap: 9px; }
-.hs-row { display: flex; align-items: center; gap: 7px; padding: 6px 8px; border-radius: 4px; cursor: pointer; transition: background .1s; }
-.hs-row:hover { background: var(--surface); }
-.hs-row.sel { background: var(--surface); }
-.hs-num { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #0F1923; flex-shrink: 0; }
-.hs-num.sel { background: var(--warn); }
-.sec-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; }
+/* ── CONTENT CARDS ── */
+.content-list{padding:12px;}
+.item-card{
+  background:var(--s2);border:1px solid var(--border);border-radius:var(--r);
+  margin-bottom:10px;overflow:hidden;
+}
+.item-card-body{padding:12px 14px;}
+.item-num{font-size:10px;color:var(--t3);margin-bottom:3px;}
+.item-title{font-size:14px;font-weight:600;line-height:1.3;}
+.item-type{font-size:11px;color:var(--t3);margin-top:3px;}
+.item-preview{font-size:12px;color:var(--t2);margin-top:6px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.item-actions{display:flex;border-top:1px solid var(--border);}
+.item-action{
+  flex:1;padding:10px;font-size:12px;font-weight:600;border:none;background:none;
+  cursor:pointer;font-family:var(--font);-webkit-tap-highlight-color:transparent;
+  transition:background .1s;
+}
+.item-action:active{background:var(--s3);}
+.item-action+.item-action{border-left:1px solid var(--border);}
+.ia-edit{color:var(--accent);}
+.ia-del{color:var(--red);}
 
-/* QUIZ */
-.opt-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
-.opt-radio { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; flex-shrink: 0; }
+/* ── EDITOR SCREEN ── */
+.editor-topbar{
+  display:flex;align-items:center;gap:10px;padding:12px 16px;
+  background:var(--s1);border-bottom:1px solid var(--border);flex-shrink:0;
+}
 
-/* EMPTY */
-.empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text3); gap: 10px; }
-.empty-icon { font-size: 40px; opacity: .3; }
+/* ── IMAGE UPLOAD ── */
+.upload-btn{
+  display:flex;align-items:center;gap:8px;padding:14px;
+  background:var(--s1);border:2px dashed var(--border);border-radius:8px;
+  cursor:pointer;font-size:13px;color:var(--t2);transition:border-color .15s;
+}
+.upload-btn:active{border-color:var(--accent);}
+.img-prev{width:100%;max-height:200px;object-fit:contain;border-radius:8px;display:block;margin-bottom:8px;}
 
-/* MODAL */
-#modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none; align-items: center; justify-content: center; z-index: 900; }
-#modal.on { display: flex; }
-.modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; width: 380px; max-width: 90vw; }
-.modal-box h3 { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
-.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+/* ── ZONA EDITOR ── */
+#hs-wrap{position:relative;display:inline-block;}
+#hs-img{display:block;width:100%;border-radius:8px;}
+.hs-dot{
+  position:absolute;width:28px;height:28px;border-radius:50%;
+  background:var(--accent);border:3px solid #0F1923;
+  transform:translate(-50%,-50%);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;color:#0F1923;z-index:2;
+}
+.hs-dot.sel{background:var(--warn);}
 
-/* TOAST */
-#toast { position: fixed; bottom: 16px; right: 16px; padding: 10px 16px; border-radius: var(--r); font-size: 13px; font-weight: 500; opacity: 0; transform: translateY(6px); transition: opacity .2s, transform .2s; pointer-events: none; z-index: 999; }
-#toast.show { opacity: 1; transform: translateY(0); }
-.t-ok   { background: #064e3b; color: #6ee7b7; }
-.t-err  { background: #7f1d1d; color: #fca5a5; }
-.t-info { background: #1e3a5f; color: #93c5fd; }
+/* ── OBSERVATIONS PANEL ── */
+#obs-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:800;
+  display:none;align-items:flex-end;
+}
+#obs-overlay.on{display:flex;}
+.obs-panel{
+  width:100%;background:var(--s2);border-radius:20px 20px 0 0;
+  padding:20px;max-height:75vh;display:flex;flex-direction:column;gap:12px;
+}
+.obs-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 4px;}
+.obs-title{font-size:16px;font-weight:700;}
+.obs-sub{font-size:12px;color:var(--t2);}
+#obs-text{min-height:140px;font-size:14px;}
 
-hr { border: none; border-top: 1px solid var(--border); margin: 11px 0; }
-.row2 { display: flex; gap: 10px; }
-.row2 > * { flex: 1; }
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+/* ── MODAL ── */
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:900;display:none;align-items:center;justify-content:center;padding:16px;}
+#modal.on{display:flex;}
+.modal-box{width:100%;max-width:360px;background:var(--s2);border:1px solid var(--border);border-radius:16px;padding:24px;}
+.modal-box h3{font-size:16px;font-weight:700;margin-bottom:10px;}
+.modal-box p{font-size:13px;color:var(--t2);margin-bottom:18px;}
+.modal-acts{display:flex;gap:8px;}
+.modal-acts .btn{flex:1;}
+
+/* ── EMPTY ── */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:50px 20px;gap:10px;color:var(--t3);}
+.empty-icon{font-size:44px;opacity:.3;}
+.empty-label{font-size:14px;text-align:center;}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(10px);padding:10px 18px;border-radius:99px;font-size:13px;font-weight:600;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:999;white-space:nowrap;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.t-ok{background:#065f46;color:#6ee7b7;}
+.t-err{background:#7f1d1d;color:#fca5a5;}
+.t-info{background:#1e3a5f;color:#93c5fd;}
+
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 </style>
 </head>
 <body>
+<div id="root">
 
-<!-- LOGIN -->
-<div id="login-screen">
+<!-- ══ LOGIN ══ -->
+<div class="screen active" id="s-login">
   <div class="login-card">
-    <div class="brand">AppTus</div>
+    <div class="login-brand">AppTus</div>
     <h1>Builder</h1>
     <p>Creación de módulos de capacitación</p>
-    <div class="field">
-      <label>Clave de acceso</label>
+    <div class="field"><label>Clave de acceso</label>
       <input type="password" id="login-pw" placeholder="••••••••">
     </div>
-    <div id="login-err" style="color:var(--danger);font-size:12px;margin-bottom:10px;display:none">Clave incorrecta.</div>
+    <div id="login-err" style="color:var(--red);font-size:12px;margin-bottom:10px;display:none">Clave incorrecta.</div>
     <button class="btn btn-primary btn-full" onclick="doLogin()">Entrar →</button>
   </div>
 </div>
 
-<!-- APP -->
-<div id="app">
-  <div id="sidebar">
-    <div class="sb-head">
-      <div class="sb-brand">AppTus Builder</div>
-      <div class="sb-sub">Módulos de capacitación</div>
+<!-- ══ LIST ══ -->
+<div class="screen" id="s-list">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">AppTus Builder</div>
+      <div class="topbar-sub">Módulos de capacitación</div>
     </div>
-    <div class="sb-search">
-      <input type="text" id="search" placeholder="Buscar…" oninput="filterList()">
+    <button class="btn-icon btn btn-ghost" onclick="doLogout()" title="Salir" style="font-size:16px">↩</button>
+  </div>
+  <div class="search-wrap">
+    <input type="text" id="search" placeholder="🔍  Buscar módulos…" oninput="filterList()">
+  </div>
+  <div class="screen-body" id="mod-list" style="padding-bottom:80px">
+    <div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-label">Cargando…</div></div>
+  </div>
+  <div class="fab-wrap">
+    <button class="fab fab-primary" onclick="newMod()" title="Nuevo módulo">＋</button>
+  </div>
+</div>
+
+<!-- ══ MODULE ══ -->
+<div class="screen" id="s-module">
+  <div class="topbar" id="mod-topbar">
+    <button class="back-btn" onclick="goBack('s-list')">←</button>
+    <div style="flex:1;min-width:0">
+      <div class="topbar-title" id="mod-topbar-title">Módulo</div>
     </div>
-    <div id="mod-list">
-      <div class="empty" style="height:100px"><span style="font-size:12px">Cargando…</span></div>
-    </div>
-    <div class="sb-foot">
-      <button class="btn btn-primary" style="flex:1" onclick="newMod()">+ Nuevo módulo</button>
-      <button class="btn btn-ghost" onclick="doLogout()" title="Salir" style="padding:7px 10px">↩</button>
-    </div>
+    <button class="btn btn-ghost btn-sm" onclick="saveMod(false)">Borrador</button>
+    <button class="btn btn-green btn-sm" onclick="saveMod(true)">✓ Publicar</button>
   </div>
 
-  <div id="main">
-    <div id="no-sel">
-      <div style="font-size:36px;opacity:.2">📦</div>
-      <div style="font-size:13px">Seleccioná un módulo o creá uno nuevo</div>
-    </div>
+  <div class="screen-body-notop" style="overflow-y:auto;display:flex;flex-direction:column;">
 
-    <div id="editor">
-      <!-- HEADER -->
-      <div id="mod-head">
-        <div class="head-fields">
-          <input type="text" id="f-nombre" placeholder="Nombre del módulo" style="flex:2;min-width:160px">
-          <input type="text" id="f-sub" placeholder="Subtítulo / Equipo" style="flex:1.5;min-width:130px">
-          <select id="f-cat" style="flex:1;min-width:120px">
+    <!-- META FORM -->
+    <div class="meta-form">
+      <div class="row2">
+        <div class="field"><label>Nombre</label><input type="text" id="f-nombre" placeholder="Nombre del módulo" oninput="document.getElementById('mod-topbar-title').textContent=this.value||'Módulo'"></div>
+        <div class="field" style="flex:0 0 70px"><label>Ícono</label><input type="text" id="f-icono" placeholder="📋" style="text-align:center;font-size:20px"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Subtítulo / Equipo</label><input type="text" id="f-sub" placeholder="ej: Desfibrilador"></div>
+        <div class="field"><label>Categoría</label>
+          <select id="f-cat">
             <option value="equipos">Equipos biomédicos</option>
             <option value="normas">Normas y estándares</option>
             <option value="higiene">Higiene y seguridad</option>
             <option value="empresa">Módulo empresa</option>
           </select>
-          <input type="text" id="f-icono" placeholder="Icono emoji" style="flex:0 0 70px;text-align:center">
-        </div>
-        <div class="head-actions">
-          <button class="btn btn-ghost" onclick="saveMod(false)" style="font-size:12px">Guardar borrador</button>
-          <button class="btn btn-green" onclick="saveMod(true)" style="font-size:12px">✓ Publicar</button>
-          <button class="btn btn-danger" onclick="confirmDel()" style="padding:7px 10px" title="Eliminar">✕</button>
         </div>
       </div>
+    </div>
 
-      <!-- TABS -->
-      <div id="tabs">
-        <button class="tab on" data-t="slides" onclick="switchTab('slides')">Slides</button>
-        <button class="tab" data-t="zonas" onclick="switchTab('zonas')">Zonas interactivas</button>
-        <button class="tab" data-t="quiz" onclick="switchTab('quiz')">Quiz</button>
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab on" data-t="slides" onclick="switchTab('slides')">Slides</button>
+      <button class="tab" data-t="zonas" onclick="switchTab('zonas')">Zonas</button>
+      <button class="tab" data-t="quiz" onclick="switchTab('quiz')">Quiz</button>
+    </div>
+
+    <!-- SLIDES TAB -->
+    <div id="tab-slides" style="flex:1;position:relative;padding-bottom:80px">
+      <div class="content-list" id="slides-list"></div>
+      <div class="fab-wrap">
+        <button class="fab fab-notes" onclick="openObs()" title="Observaciones">💬</button>
+        <button class="fab fab-primary" onclick="addSlide()">＋</button>
       </div>
+    </div>
 
-      <!-- PANELS -->
-      <div id="panels">
-
-        <!-- SLIDES -->
-        <div class="panel on" id="p-slides">
-          <div class="list-col">
-            <div class="list-head">
-              <span>Slides</span>
-              <button class="btn btn-primary btn-sm" onclick="addSlide()">+ Agregar</button>
-            </div>
-            <div class="list-items" id="slide-items"></div>
-          </div>
-          <div class="edit-col" id="slide-edit">
-            <div class="empty"><div class="empty-icon">🖼</div><div style="font-size:13px">Seleccioná o creá un slide</div></div>
-          </div>
+    <!-- ZONAS TAB -->
+    <div id="tab-zonas" style="display:none;flex:1;position:relative;padding-bottom:80px">
+      <div style="padding:14px">
+        <label class="upload-btn" style="margin-bottom:14px">
+          📁 Subir imagen base del equipo
+          <input type="file" id="zona-file" accept="image/*" style="display:none" onchange="uploadZonaBase(event)">
+        </label>
+        <div id="hs-wrap" style="display:none;margin-bottom:12px">
+          <img id="hs-img" src="" alt="" onclick="imgClick(event)" style="cursor:crosshair">
         </div>
+        <div id="zona-noimg" style="color:var(--t3);font-size:13px;text-align:center;padding:30px 0">Subí una imagen para agregar hotspots interactivos</div>
+        <div id="hs-cards"></div>
+      </div>
+      <div class="fab-wrap">
+        <button class="fab fab-notes" onclick="openObs()">💬</button>
+        <button class="fab fab-primary" onclick="startAddHs()">＋</button>
+      </div>
+    </div>
 
-        <!-- ZONAS -->
-        <div class="panel" id="p-zonas">
-          <div id="zona-canvas">
-            <div id="zona-toolbar">
-              <span style="font-size:13px;font-weight:600;color:var(--text2)">Imagen del equipo</span>
-              <label class="btn btn-ghost btn-sm" style="cursor:pointer">
-                📁 Subir imagen base
-                <input type="file" id="zona-file" accept="image/*" style="display:none" onchange="uploadZonaBase(event)">
-              </label>
-              <button class="btn btn-primary btn-sm" onclick="startAddHs()">+ Hotspot</button>
-              <span id="hs-hint" style="font-size:11px;color:var(--text3);display:none">Hacé clic en la imagen</span>
-            </div>
-            <div id="hs-wrap" style="display:none">
-              <img id="hs-img" src="" alt="" onclick="imgClick(event)">
-            </div>
-            <div id="zona-noimg">Subí una imagen del equipo para agregar zonas interactivas</div>
-          </div>
-          <div id="zona-side">
-            <div class="sec-title">Hotspots</div>
-            <div id="hs-list"><div style="color:var(--text3);font-size:12px">Sin hotspots todavía.</div></div>
-            <hr>
-            <div id="hs-editor" style="display:none">
-              <div class="sec-title" style="margin-bottom:9px">Editar hotspot</div>
-              <div class="field"><label>Nombre</label><input type="text" id="hs-nombre" placeholder="ej: Pantalla principal"></div>
-              <div class="field"><label>Descripción</label><textarea id="hs-desc" style="min-height:60px" placeholder="Info al tocar…"></textarea></div>
-              <div style="display:flex;gap:7px">
-                <button class="btn btn-primary" style="flex:1;font-size:12px" onclick="saveHs()">Guardar</button>
-                <button class="btn btn-danger btn-sm" onclick="deleteHs()">✕</button>
-              </div>
-            </div>
-          </div>
-        </div>
+    <!-- QUIZ TAB -->
+    <div id="tab-quiz" style="display:none;flex:1;position:relative;padding-bottom:80px">
+      <div class="content-list" id="quiz-list"></div>
+      <div class="fab-wrap">
+        <button class="fab fab-notes" onclick="openObs()">💬</button>
+        <button class="fab fab-primary" onclick="addQ()">＋</button>
+      </div>
+    </div>
 
-        <!-- QUIZ -->
-        <div class="panel" id="p-quiz">
-          <div class="list-col">
-            <div class="list-head">
-              <span>Preguntas</span>
-              <button class="btn btn-primary btn-sm" onclick="addQ()">+ Agregar</button>
-            </div>
-            <div class="list-items" id="quiz-items"></div>
-          </div>
-          <div class="edit-col" id="quiz-edit">
-            <div class="empty"><div class="empty-icon">❓</div><div style="font-size:13px">Seleccioná o creá una pregunta</div></div>
-          </div>
-        </div>
+  </div>
+</div>
 
-      </div><!-- /panels -->
-    </div><!-- /editor -->
-  </div><!-- /main -->
-</div><!-- /app -->
+<!-- ══ SLIDE EDITOR ══ -->
+<div class="screen" id="s-slide">
+  <div class="topbar">
+    <button class="back-btn" onclick="saveSlideAndBack()">←</button>
+    <div class="topbar-title" id="slide-topbar-title">Slide</div>
+    <button class="btn btn-primary btn-sm" onclick="saveSlideAndBack()">Guardar</button>
+  </div>
+  <div class="screen-body" id="slide-editor-body"></div>
+</div>
 
+<!-- ══ QUIZ EDITOR ══ -->
+<div class="screen" id="s-quiz">
+  <div class="topbar">
+    <button class="back-btn" onclick="saveQAndBack()">←</button>
+    <div class="topbar-title" id="quiz-topbar-title">Pregunta</div>
+    <button class="btn btn-primary btn-sm" onclick="saveQAndBack()">Guardar</button>
+  </div>
+  <div class="screen-body" id="quiz-editor-body"></div>
+</div>
+
+<!-- ══ HOTSPOT EDITOR ══ -->
+<div class="screen" id="s-hs">
+  <div class="topbar">
+    <button class="back-btn" onclick="saveHsAndBack()">←</button>
+    <div class="topbar-title">Editar hotspot</div>
+    <button class="btn btn-primary btn-sm" onclick="saveHsAndBack()">Guardar</button>
+  </div>
+  <div class="screen-body">
+    <div class="field"><label>Nombre del área</label><input type="text" id="hs-nombre" placeholder="ej: Pantalla principal"></div>
+    <div class="field"><label>Descripción / Información</label><textarea id="hs-desc" style="min-height:120px" placeholder="Información que aparece al tocar este punto…"></textarea></div>
+    <button class="btn btn-red btn-full" onclick="deleteHsAndBack()">🗑 Eliminar hotspot</button>
+  </div>
+</div>
+
+<!-- ══ NEW MODULE ══ -->
+<div class="screen" id="s-new">
+  <div class="topbar">
+    <button class="back-btn" onclick="goBack('s-list')">←</button>
+    <div class="topbar-title">Nuevo módulo</div>
+  </div>
+  <div class="screen-body">
+    <div class="field"><label>Nombre del módulo</label><input type="text" id="new-nombre" placeholder="ej: Monitor Mindray MEC-1200"></div>
+    <div class="field"><label>Subtítulo / Tipo de equipo</label><input type="text" id="new-sub" placeholder="ej: Monitor multiparamétrico"></div>
+    <div class="row2">
+      <div class="field"><label>Categoría</label>
+        <select id="new-cat">
+          <option value="equipos">Equipos biomédicos</option>
+          <option value="normas">Normas y estándares</option>
+          <option value="higiene">Higiene y seguridad</option>
+          <option value="empresa">Módulo empresa</option>
+        </select>
+      </div>
+      <div class="field" style="flex:0 0 90px"><label>Ícono emoji</label><input type="text" id="new-icono" placeholder="📋" style="text-align:center;font-size:20px"></div>
+    </div>
+    <button class="btn btn-primary btn-full" style="margin-top:8px" onclick="createMod()">Crear módulo →</button>
+  </div>
+</div>
+
+</div><!-- /root -->
+
+<!-- OBSERVATIONS PANEL -->
+<div id="obs-overlay" onclick="closeObsIfBg(event)">
+  <div class="obs-panel">
+    <div class="obs-handle"></div>
+    <div class="obs-title">💬 Observaciones</div>
+    <div class="obs-sub" id="obs-sub">Escribí notas sobre este módulo para revisión futura</div>
+    <textarea id="obs-text" placeholder="ej: El slide 3 necesita más detalle sobre el procedimiento. Agregar imagen del panel trasero…"></textarea>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="copyObs()">📋 Copiar</button>
+      <button class="btn btn-primary btn-sm" style="flex:1" onclick="saveObs()">Guardar notas</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeObs()">✕</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
 <div id="modal">
   <div class="modal-box">
     <h3 id="modal-title">Confirmar</h3>
-    <div id="modal-body"></div>
-    <div class="modal-actions">
+    <p id="modal-body"></p>
+    <div class="modal-acts">
       <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
-      <button class="btn btn-danger" id="modal-ok">Eliminar</button>
+      <button class="btn btn-red" id="modal-ok">Eliminar</button>
     </div>
   </div>
 </div>
@@ -311,462 +432,501 @@ hr { border: none; border-top: 1px solid var(--border); margin: 11px 0; }
 
 <script>
 // ── CONFIG ──
-const SB_URL = 'https://drfyicdwwltzzahqixlz.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZnlpY2R3d2x0enphaHFpeGx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMjgzMDEsImV4cCI6MjA5NDkwNDMwMX0.Ar9pc4OAI09mb4Mu96wlSyimNNuLS54NZ-eqsh80pOU';
-const APPTUS_API = `${SB_URL}/functions/v1/apptus-api`;
-const BUCKET  = 'apptus-media';
-const STORAGE = `${SB_URL}/storage/v1/object/public/${BUCKET}`;
-const PASS    = 'SEM2026super';
-
-const sb = window.supabase.createClient(SB_URL, SB_KEY);
+const SB_URL='https://drfyicdwwltzzahqixlz.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZnlpY2R3d2x0enphaHFpeGx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMjgzMDEsImV4cCI6MjA5NDkwNDMwMX0.Ar9pc4OAI09mb4Mu96wlSyimNNuLS54NZ-eqsh80pOU';
+const BUCKET='apptus-media';
+const STORAGE=`${SB_URL}/storage/v1/object/public/${BUCKET}`;
+const PASS='SEM2026super';
+const sb=window.supabase.createClient(SB_URL,SB_KEY);
 
 // ── STATE ──
-// cur.data = raw row from at_modulos
-// cur.slides = parsed slides array (from cur.data.mods[0].slides or flat)
-// cur.quiz   = parsed quiz array   (from cur.data.quiz)
-// cur.zonas  = { imagen_base, hotspots[] }
-let mods = [], cur = null, slideIdx = null, qIdx = null, hsIdx = null, addingHs = false;
+let mods=[],cur=null,slideIdx=null,qIdx=null,hsIdx=null,addingHs=false;
+let screenStack=['s-login'];
+
+// ── SCREEN NAVIGATION ──
+function goTo(id){
+  const prev=screenStack[screenStack.length-1];
+  if(prev===id)return;
+  document.getElementById(prev)?.classList.add('behind');
+  document.getElementById(id)?.classList.add('active');
+  screenStack.push(id);
+}
+function goBack(to){
+  const cur=screenStack[screenStack.length-1];
+  document.getElementById(cur)?.classList.remove('active');
+  // find 'to' in stack
+  const idx=screenStack.lastIndexOf(to);
+  if(idx>=0){
+    screenStack=screenStack.slice(0,idx+1);
+    document.querySelectorAll('.screen').forEach(s=>{
+      s.classList.remove('active','behind');
+      if(s.id===to)s.classList.add('active');
+    });
+  }
+}
 
 // ── AUTH ──
-document.getElementById('login-pw').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
-function doLogin() {
-  if (document.getElementById('login-pw').value === PASS) {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app').classList.add('on');
-    loadMods();
+document.getElementById('login-pw').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+function doLogin(){
+  if(document.getElementById('login-pw').value===PASS){
+    goBack('s-login'); goTo('s-list'); loadMods();
   } else {
-    document.getElementById('login-err').style.display = 'block';
+    document.getElementById('login-err').style.display='block';
   }
 }
-function doLogout() {
-  document.getElementById('app').classList.remove('on');
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('login-pw').value = '';
-  cur = null; mods = []; hideEditor();
+function doLogout(){
+  goBack('s-login'); cur=null; mods=[];
+  document.getElementById('login-pw').value='';
 }
 
-// ── PARSE helpers ──
-// mods column in at_modulos = array of "mod sections", each has .slides[]
-// We flatten all slides across sections for the Builder's simple editor
-function parseMods(raw) {
-  if (!raw) return [];
-  if (Array.isArray(raw)) {
-    // flat slides array
-    if (raw.length === 0 || raw[0]?.type || raw[0]?.texto !== undefined || raw[0]?.cuerpo !== undefined) return raw;
-    // array of mod sections (AppTus native format)
-    const flat = [];
-    raw.forEach(section => {
-      if (Array.isArray(section.slides)) section.slides.forEach(s => flat.push(s));
-    });
+// ── PARSE ──
+function parseMods(raw){
+  if(!raw||!Array.isArray(raw))return[];
+  if(!raw.length)return[];
+  if(raw[0]?.slides){
+    const flat=[];
+    raw.forEach(s=>{if(Array.isArray(s.slides))s.slides.forEach(sl=>flat.push(sl));});
     return flat;
   }
-  return [];
+  return raw;
 }
-function parseQuiz(raw) {
-  if (!raw) return [];
-  if (Array.isArray(raw)) {
-    // AppTus native: [{q,ops,ans},...] or builder format [{pregunta,opciones,correcta}]
-    return raw.map(q => ({
-      id:          q.id || uid(),
-      pregunta:    q.pregunta || q.q || '',
-      opciones:    q.opciones || q.ops || ['','','',''],
-      correcta:    typeof q.correcta === 'number' ? q.correcta : (q.ans ?? 0),
-      explicacion: q.explicacion || q.exp || ''
-    }));
-  }
-  return [];
-}
-function parseZonas(raw) {
-  if (!raw) return { imagen_base: '', hotspots: [] };
-  if (typeof raw === 'object' && !Array.isArray(raw)) return raw;
-  return { imagen_base: '', hotspots: [] };
-}
-
-// ── LOAD ──
-async function loadMods() {
-  const el = document.getElementById('mod-list');
-  el.innerHTML = `<div class="empty" style="height:100px"><span style="font-size:12px">Cargando…</span></div>`;
-
-  const { data, error } = await sb
-    .from('at_modulos')
-    .select('id, nombre, sub, categoria, icono, activo, updated_at')
-    .order('updated_at', { ascending: false });
-
-  if (error) {
-    el.innerHTML = `<div style="padding:12px">
-      <div style="color:var(--danger);font-size:11px;word-break:break-word;margin-bottom:8px">⚠ ${esc(error.message)}</div>
-      <button class="btn btn-ghost btn-sm btn-full" onclick="loadMods()">↺ Reintentar</button>
-    </div>`;
-    return;
-  }
-  mods = data || [];
-  renderList();
-}
-
-function renderList(q = '') {
-  const lc = q.toLowerCase();
-  const filtered = mods.filter(m =>
-    (m.nombre||'').toLowerCase().includes(lc) ||
-    (m.sub||'').toLowerCase().includes(lc) ||
-    (m.categoria||'').toLowerCase().includes(lc)
-  );
-  const el = document.getElementById('mod-list');
-  if (!filtered.length) {
-    el.innerHTML = `<div class="empty" style="height:100px"><span style="font-size:12px">${q?'Sin resultados':'Sin módulos'}</span></div>`;
-    return;
-  }
-  el.innerHTML = filtered.map(m => `
-    <div class="mod-item ${cur?.data?.id===m.id?'active':''}" onclick="selectMod('${m.id}')">
-      <div class="mod-name">${esc((m.icono?m.icono+' ':'')+( m.nombre||'Sin nombre'))}</div>
-      <div class="mod-meta">
-        ${m.sub ? `<span class="tag">${esc(m.sub)}</span>` : ''}
-        ${m.categoria ? `<span class="tag">${esc(m.categoria)}</span>` : ''}
-        <span class="badge ${m.activo?'b-on':'b-off'}">${m.activo?'activo':'borrador'}</span>
-      </div>
-    </div>`).join('');
-}
-function filterList() { renderList(document.getElementById('search').value); }
-
-// ── SELECT ──
-async function selectMod(id) {
-  const { data, error } = await sb.from('at_modulos').select('*').eq('id', id).single();
-  if (error) { toast('Error al abrir: ' + error.message, 'err'); return; }
-  cur = {
-    data,
-    slides: parseMods(data.mods),
-    quiz:   parseQuiz(data.quiz),
-    zonas:  parseZonas(data.zonas)
-  };
-  slideIdx = null; qIdx = null; hsIdx = null;
-  renderList(document.getElementById('search').value);
-  showEditor();
-}
-
-function newMod() {
-  cur = {
-    data: { id: null, nombre: '', sub: '', categoria: 'equipos', icono: '📋', activo: false },
-    slides: [], quiz: [], zonas: { imagen_base: '', hotspots: [] }
-  };
-  slideIdx = null; qIdx = null; hsIdx = null;
-  showEditor();
-  document.getElementById('f-nombre').focus();
-}
-
-function showEditor() {
-  document.getElementById('no-sel').style.display = 'none';
-  document.getElementById('editor').classList.add('on');
-  const d = cur.data;
-  document.getElementById('f-nombre').value = d.nombre || '';
-  document.getElementById('f-sub').value    = d.sub    || '';
-  document.getElementById('f-cat').value    = d.categoria || 'equipos';
-  document.getElementById('f-icono').value  = d.icono  || '📋';
-  renderSlides(); renderZonas(); renderQuiz();
-  switchTab(document.querySelector('.tab.on')?.dataset.t || 'slides');
-}
-function hideEditor() {
-  document.getElementById('no-sel').style.display = 'flex';
-  document.getElementById('editor').classList.remove('on');
-}
-
-// ── SAVE ──
-async function saveMod(activo) {
-  const nombre = document.getElementById('f-nombre').value.trim();
-  if (!nombre) { toast('El módulo necesita un nombre', 'err'); return; }
-
-  // Build payload using AppTus native format
-  const payload = {
-    nombre,
-    sub:       document.getElementById('f-sub').value.trim(),
-    categoria: document.getElementById('f-cat').value,
-    icono:     document.getElementById('f-icono').value.trim() || '📋',
-    activo,
-    mods:      buildModsPayload(),
-    quiz:      buildQuizPayload(),
-    zonas:     cur.zonas,
-    updated_at: new Date().toISOString()
-  };
-
-  let result;
-  if (cur.data.id) {
-    const { data, error } = await sb.from('at_modulos').update(payload).eq('id', cur.data.id).select().single();
-    if (error) { toast('Error: ' + error.message, 'err'); return; }
-    result = data;
-  } else {
-    const { data, error } = await sb.from('at_modulos')
-      .insert({ ...payload, created_at: new Date().toISOString() }).select().single();
-    if (error) { toast('Error: ' + error.message, 'err'); return; }
-    result = data;
-  }
-
-  cur.data = result;
-  const idx = mods.findIndex(m => m.id === result.id);
-  if (idx >= 0) mods[idx] = { ...mods[idx], ...result };
-  else mods.unshift(result);
-  renderList(document.getElementById('search').value);
-  toast(activo ? '✓ Módulo publicado' : 'Borrador guardado', 'ok');
-}
-
-// Build mods in AppTus native format: array of sections, each with slides[]
-function buildModsPayload() {
-  const slides = cur.slides;
-  if (!slides.length) return [];
-  // Wrap in a single section
-  return [{ id: 0, title: document.getElementById('f-nombre').value.trim(), slides }];
-}
-
-function buildQuizPayload() {
-  return cur.quiz.map(q => ({
-    q:    q.pregunta,
-    ops:  q.opciones,
-    ans:  q.correcta,
-    exp:  q.explicacion || ''
+function parseQuiz(raw){
+  if(!raw||!Array.isArray(raw))return[];
+  return raw.map(q=>({
+    id:q.id||uid(),pregunta:q.pregunta||q.q||'',
+    opciones:q.opciones||q.ops||['','','',''],
+    correcta:typeof q.correcta==='number'?q.correcta:(q.ans??0),
+    explicacion:q.explicacion||q.exp||''
   }));
 }
-
-// ── DELETE ──
-async function deleteMod() {
-  closeModal();
-  if (!cur?.data?.id) { cur = null; hideEditor(); return; }
-  const { error } = await sb.from('at_modulos').delete().eq('id', cur.data.id);
-  if (error) { toast('Error al eliminar: ' + error.message, 'err'); return; }
-  mods = mods.filter(m => m.id !== cur.data.id);
-  renderList(document.getElementById('search').value);
-  cur = null; hideEditor();
-  toast('Módulo eliminado', 'info');
+function parseZonas(raw){
+  if(raw&&typeof raw==='object'&&!Array.isArray(raw))return raw;
+  return{imagen_base:'',hotspots:[]};
 }
-function confirmDel() {
-  document.getElementById('modal-title').textContent = 'Eliminar módulo';
-  document.getElementById('modal-body').innerHTML =
-    `<p style="color:var(--text2);font-size:13px">¿Eliminás "<strong>${esc(cur?.data?.nombre||'Sin nombre')}</strong>"? No se puede deshacer.</p>`;
-  document.getElementById('modal-ok').onclick = deleteMod;
+
+// ── LOAD MODULES ──
+async function loadMods(){
+  const el=document.getElementById('mod-list');
+  el.innerHTML=`<div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-label">Cargando…</div></div>`;
+  const{data,error}=await sb.from('at_modulos').select('id,nombre,sub,categoria,icono,activo,updated_at').order('updated_at',{ascending:false});
+  if(error){
+    el.innerHTML=`<div style="padding:16px"><div style="color:var(--red);font-size:13px;margin-bottom:12px">⚠ ${esc(error.message)}</div><button class="btn btn-ghost btn-full" onclick="loadMods()">↺ Reintentar</button></div>`;
+    return;
+  }
+  mods=data||[]; renderList();
+}
+
+function renderList(q=''){
+  const lc=q.toLowerCase();
+  const f=mods.filter(m=>(m.nombre||'').toLowerCase().includes(lc)||(m.sub||'').toLowerCase().includes(lc));
+  const el=document.getElementById('mod-list');
+  if(!f.length){
+    el.innerHTML=`<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-label">${q?'Sin resultados':'Sin módulos todavía'}</div></div>`;
+    return;
+  }
+  el.innerHTML=f.map(m=>`
+    <div class="mod-card" onclick="selectMod('${m.id}')">
+      <div class="mod-icon">${m.icono||'📋'}</div>
+      <div class="mod-info">
+        <div class="mod-name">${esc(m.nombre||'Sin nombre')}</div>
+        ${m.sub?`<div class="mod-sub">${esc(m.sub)}</div>`:''}
+        <div class="mod-tags">
+          ${m.categoria?`<span class="tag">${esc(m.categoria)}</span>`:''}
+          <span class="badge ${m.activo?'b-on':'b-off'}">${m.activo?'activo':'borrador'}</span>
+        </div>
+      </div>
+      <div class="mod-arrow">›</div>
+    </div>`).join('');
+}
+function filterList(){renderList(document.getElementById('search').value);}
+
+// ── SELECT MODULE ──
+async function selectMod(id){
+  toast('Abriendo…','info');
+  const{data,error}=await sb.from('at_modulos').select('*').eq('id',id).single();
+  if(error){toast('Error: '+error.message,'err');return;}
+  cur={
+    data,slides:parseMods(data.mods),
+    quiz:parseQuiz(data.quiz),
+    zonas:parseZonas(data.zonas)
+  };
+  slideIdx=null;qIdx=null;hsIdx=null;
+  openModuleScreen();
+}
+
+function newMod(){goTo('s-new');}
+
+async function createMod(){
+  const nombre=document.getElementById('new-nombre').value.trim();
+  if(!nombre){toast('Escribí un nombre','err');return;}
+  const payload={
+    nombre,sub:document.getElementById('new-sub').value.trim(),
+    categoria:document.getElementById('new-cat').value,
+    icono:document.getElementById('new-icono').value.trim()||'📋',
+    activo:false,mods:[],quiz:[],zonas:{imagen_base:'',hotspots:[]},
+    created_at:new Date().toISOString(),updated_at:new Date().toISOString()
+  };
+  const{data,error}=await sb.from('at_modulos').insert(payload).select().single();
+  if(error){toast('Error: '+error.message,'err');return;}
+  cur={data,slides:[],quiz:[],zonas:{imagen_base:'',hotspots:[]}};
+  mods.unshift(data); renderList();
+  openModuleScreen();
+  goBack('s-list'); goTo('s-module');
+}
+
+function openModuleScreen(){
+  const d=cur.data;
+  document.getElementById('f-nombre').value=d.nombre||'';
+  document.getElementById('f-sub').value=d.sub||'';
+  document.getElementById('f-cat').value=d.categoria||'equipos';
+  document.getElementById('f-icono').value=d.icono||'📋';
+  document.getElementById('mod-topbar-title').textContent=d.nombre||'Módulo';
+  renderSlideCards(); renderZonaTab(); renderQuizCards();
+  switchTab('slides');
+  goTo('s-module');
+}
+
+// ── SAVE MODULE ──
+async function saveMod(activo){
+  const nombre=document.getElementById('f-nombre').value.trim();
+  if(!nombre){toast('El módulo necesita un nombre','err');return;}
+  const payload={
+    nombre,sub:document.getElementById('f-sub').value.trim(),
+    categoria:document.getElementById('f-cat').value,
+    icono:document.getElementById('f-icono').value.trim()||'📋',
+    activo,mods:buildModsPayload(),quiz:buildQuizPayload(),
+    zonas:cur.zonas,updated_at:new Date().toISOString()
+  };
+  const{data,error}=cur.data.id
+    ? await sb.from('at_modulos').update(payload).eq('id',cur.data.id).select().single()
+    : await sb.from('at_modulos').insert({...payload,created_at:new Date().toISOString()}).select().single();
+  if(error){toast('Error: '+error.message,'err');return;}
+  cur.data=data;
+  const idx=mods.findIndex(m=>m.id===data.id);
+  if(idx>=0)mods[idx]={...mods[idx],...data};else mods.unshift(data);
+  renderList(document.getElementById('search').value);
+  document.getElementById('mod-topbar-title').textContent=data.nombre||'Módulo';
+  toast(activo?'✓ Módulo publicado':'Borrador guardado','ok');
+}
+
+function buildModsPayload(){
+  if(!cur.slides.length)return[];
+  return[{id:0,title:document.getElementById('f-nombre').value.trim(),slides:cur.slides}];
+}
+function buildQuizPayload(){
+  return cur.quiz.map(q=>({q:q.pregunta,ops:q.opciones,ans:q.correcta,exp:q.explicacion||''}));
+}
+
+// ── DELETE MODULE ──
+function confirmDelMod(){
+  document.getElementById('modal-title').textContent='Eliminar módulo';
+  document.getElementById('modal-body').textContent=`¿Eliminás "${cur?.data?.nombre||'Sin nombre'}"? No se puede deshacer.`;
+  document.getElementById('modal-ok').onclick=async()=>{
+    closeModal();
+    if(!cur?.data?.id){goBack('s-list');return;}
+    const{error}=await sb.from('at_modulos').delete().eq('id',cur.data.id);
+    if(error){toast('Error: '+error.message,'err');return;}
+    mods=mods.filter(m=>m.id!==cur.data.id);
+    renderList(); cur=null; goBack('s-list');
+    toast('Módulo eliminado','info');
+  };
   document.getElementById('modal').classList.add('on');
 }
 
 // ── TABS ──
-function switchTab(t) {
-  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.t === t));
-  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', p.id === 'p-' + t));
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  document.getElementById('tab-slides').style.display=t==='slides'?'block':'none';
+  document.getElementById('tab-zonas').style.display=t==='zonas'?'block':'none';
+  document.getElementById('tab-quiz').style.display=t==='quiz'?'block':'none';
 }
 
-// ── UPLOAD ──
-async function uploadFile(file, prefix) {
-  const ext  = file.name.split('.').pop().toLowerCase();
-  const name = `${prefix}${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
-  const res  = await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${name}`, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': file.type },
-    body: file
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return `${STORAGE}/${name}`;
-}
-
-// ══════════════ SLIDES ══════════════
-function renderSlides() {
-  const sl = cur.slides;
-  document.getElementById('slide-items').innerHTML = sl.length
-    ? sl.map((s, i) => `
-        <div class="list-item ${slideIdx===i?'active':''}" onclick="selSlide(${i})">
-          <div class="li-num">${i+1}</div>
-          <div class="li-title">${esc(s.titulo||s.title||'Sin título')}</div>
-          <div class="li-type">${s.tipo||s.type||'texto'}</div>
-        </div>`).join('')
-    : `<div class="empty" style="height:80px"><span style="font-size:12px">Sin slides</span></div>`;
-  if (slideIdx !== null && sl[slideIdx]) renderSlideEdit(slideIdx);
-  else document.getElementById('slide-edit').innerHTML = `<div class="empty"><div class="empty-icon">🖼</div><div style="font-size:13px">Seleccioná o creá un slide</div></div>`;
-}
-function selSlide(i) { slideIdx = i; renderSlides(); }
-
-function renderSlideEdit(i) {
-  const s = cur.slides[i];
-  const canUp = i > 0, canDown = i < cur.slides.length - 1;
-  document.getElementById('slide-edit').innerHTML = `
-    <div class="panel-title">Slide ${i+1}
-      <div class="panel-btns">
-        ${canUp   ? `<button class="btn btn-ghost btn-sm" onclick="moveSlide(${i},-1)">↑</button>` : ''}
-        ${canDown ? `<button class="btn btn-ghost btn-sm" onclick="moveSlide(${i},1)">↓</button>`  : ''}
-        <button class="btn btn-danger btn-sm" onclick="delSlide(${i})">✕</button>
+// ══════════ SLIDES ══════════
+function renderSlideCards(){
+  const el=document.getElementById('slides-list');
+  if(!cur.slides.length){
+    el.innerHTML=`<div class="empty-state"><div class="empty-icon">🖼</div><div class="empty-label">Sin slides todavía.<br>Tocá ＋ para agregar uno.</div></div>`;
+    return;
+  }
+  el.innerHTML=cur.slides.map((s,i)=>`
+    <div class="item-card">
+      <div class="item-card-body">
+        <div class="item-num">Slide ${i+1}</div>
+        <div class="item-title">${esc(s.titulo||s.title||'Sin título')}</div>
+        <div class="item-type">${s.tipo||s.type||'texto'}</div>
+        ${(s.cuerpo||s.msg)?`<div class="item-preview">${esc(s.cuerpo||s.msg)}</div>`:''}
+        ${(s.imagen_url||s.img)?`<img src="${s.imagen_url||s.img}" style="width:100%;max-height:100px;object-fit:cover;border-radius:6px;margin-top:8px">`:''}
       </div>
+      <div class="item-actions">
+        <button class="item-action ia-edit" onclick="editSlide(${i})">✏ Editar</button>
+        <button class="item-action" style="color:var(--t2)" onclick="moveUp(${i})" ${i===0?'disabled':''}>↑</button>
+        <button class="item-action" style="color:var(--t2)" onclick="moveDown(${i})" ${i===cur.slides.length-1?'disabled':''}>↓</button>
+        <button class="item-action ia-del" onclick="confirmDelSlide(${i})">🗑</button>
+      </div>
+    </div>`).join('');
+}
+
+function addSlide(){
+  cur.slides.push({id:uid(),tipo:'texto',type:'texto',titulo:'',title:'',cuerpo:'',msg:'',imagen_url:'',video_url:''});
+  slideIdx=cur.slides.length-1;
+  editSlide(slideIdx);
+}
+function editSlide(i){
+  slideIdx=i;
+  document.getElementById('slide-topbar-title').textContent=`Slide ${i+1}`;
+  renderSlideEditorBody(i);
+  goTo('s-slide');
+}
+function saveSlideAndBack(){
+  // read form into cur.slides[slideIdx]
+  const s=cur.slides[slideIdx];
+  if(!s){goBack('s-module');return;}
+  s.titulo=s.title=document.getElementById('se-titulo')?.value||s.titulo||'';
+  s.tipo=s.type=document.getElementById('se-tipo')?.value||s.tipo||'texto';
+  s.cuerpo=s.msg=document.getElementById('se-cuerpo')?.value||s.cuerpo||'';
+  s.video_url=s.url=document.getElementById('se-video')?.value||s.video_url||'';
+  renderSlideCards(); goBack('s-module');
+}
+
+function renderSlideEditorBody(i){
+  const s=cur.slides[i];
+  const tipo=s.tipo||s.type||'texto';
+  document.getElementById('slide-editor-body').innerHTML=`
+    <div class="field"><label>Tipo de slide</label>
+      <select id="se-tipo" onchange="onTipoChange(${i},this.value)">
+        <option value="texto"  ${tipo==='texto' ?'selected':''}>Texto</option>
+        <option value="imagen" ${tipo==='imagen'?'selected':''}>Imagen + texto</option>
+        <option value="notice" ${tipo==='notice'?'selected':''}>Aviso / Notice</option>
+        <option value="video"  ${tipo==='video' ?'selected':''}>Video</option>
+      </select>
     </div>
-    <div class="row2">
-      <div class="field"><label>Tipo</label>
-        <select id="s-tipo" onchange="setSF(${i},'tipo',this.value);renderSlides()">
-          <option value="texto"  ${(s.tipo||s.type)==='texto' ?'selected':''}>Texto</option>
-          <option value="imagen" ${(s.tipo||s.type)==='imagen'?'selected':''}>Imagen + texto</option>
-          <option value="notice" ${(s.tipo||s.type)==='notice'?'selected':''}>Aviso / Notice</option>
-          <option value="video"  ${(s.tipo||s.type)==='video' ?'selected':''}>Video</option>
-        </select>
-      </div>
-      <div class="field"><label>Título</label>
-        <input type="text" value="${esc(s.titulo||s.title||'')}" placeholder="Título del slide" oninput="setSF(${i},'titulo',this.value);setSF(${i},'title',this.value);updListTitle('slide-items',${i},this.value)">
-      </div>
+    <div class="field"><label>Título del slide</label>
+      <input type="text" id="se-titulo" value="${esc(s.titulo||s.title||'')}" placeholder="Título…">
     </div>
     <div class="field"><label>Texto / Contenido</label>
-      <textarea style="min-height:100px" placeholder="Texto del slide…" oninput="setSF(${i},'cuerpo',this.value);setSF(${i},'msg',this.value)">${esc(s.cuerpo||s.msg||s.sub||'')}</textarea>
+      <textarea id="se-cuerpo" style="min-height:120px" placeholder="Contenido del slide…">${esc(s.cuerpo||s.msg||'')}</textarea>
     </div>
-    ${(s.tipo||s.type)==='imagen' ? imgSec(i,s) : ''}
-    ${(s.tipo||s.type)==='video'  ? vidSec(i,s) : ''}
+    ${tipo==='imagen'?renderImgSection(i,s):''}
+    ${tipo==='video'?`<div class="field"><label>URL del video</label><input type="text" id="se-video" value="${esc(s.video_url||s.url||'')}" placeholder="https://…"></div>`:''}
+    <div style="height:20px"></div>
+    <button class="btn btn-red btn-full" onclick="confirmDelSlide(${i});goBack('s-module')">🗑 Eliminar este slide</button>
   `;
 }
 
-function imgSec(i, s) {
-  return `<div class="field"><label>Imagen</label>
-    ${s.imagen_url||s.img ? `<img src="${s.imagen_url||s.img}" class="img-prev">` : ''}
-    <div class="upload-area" onclick="document.getElementById('fi-${i}').click()"
-         ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="dropImg(event,${i})">
-      <input type="file" id="fi-${i}" accept="image/*" style="display:none" onchange="pickImg(event,${i})">
-      <span style="color:var(--text3);font-size:13px">${s.imagen_url||s.img?'📁 Cambiar imagen':'📁 Subir imagen — o arrastrá aquí'}</span>
-    </div></div>`;
+function onTipoChange(i,val){
+  cur.slides[i].tipo=cur.slides[i].type=val;
+  // read current text fields before re-render
+  cur.slides[i].titulo=cur.slides[i].title=document.getElementById('se-titulo')?.value||'';
+  cur.slides[i].cuerpo=cur.slides[i].msg=document.getElementById('se-cuerpo')?.value||'';
+  renderSlideEditorBody(i);
 }
-function vidSec(i, s) {
-  return `<div class="field"><label>URL del video</label>
-    <input type="text" value="${esc(s.video_url||s.url||'')}" placeholder="https://…" oninput="setSF(${i},'video_url',this.value);setSF(${i},'url',this.value)">
+
+function renderImgSection(i,s){
+  return`<div class="field"><label>Imagen</label>
+    ${s.imagen_url||s.img?`<img src="${s.imagen_url||s.img}" class="img-prev">`:''}
+    <label class="upload-btn" style="cursor:pointer">
+      📁 ${s.imagen_url||s.img?'Cambiar imagen':'Subir imagen'}
+      <input type="file" accept="image/*" style="display:none" onchange="pickSlideImg(event,${i})">
+    </label>
   </div>`;
 }
 
-async function pickImg(e, i) { const f=e.target.files[0]; if(f) await uploadSlideImg(f,i); }
-async function dropImg(e, i) { e.preventDefault(); e.currentTarget.classList.remove('drag'); const f=e.dataTransfer.files[0]; if(f) await uploadSlideImg(f,i); }
-async function uploadSlideImg(file, i) {
+async function pickSlideImg(event,i){
+  const f=event.target.files[0];if(!f)return;
   toast('Subiendo…','info');
-  try {
-    const url = await uploadFile(file, 'slides/');
-    setSF(i,'imagen_url',url); setSF(i,'img',url);
-    renderSlideEdit(i); toast('Imagen cargada','ok');
-  } catch(e) { toast('Error al subir: '+e.message,'err'); }
+  try{
+    const url=await uploadFile(f,'slides/');
+    cur.slides[i].imagen_url=cur.slides[i].img=url;
+    renderSlideEditorBody(i);
+    toast('Imagen cargada','ok');
+  }catch(e){toast('Error: '+e.message,'err');}
 }
 
-function setSF(i, k, v) { if(cur.slides[i]) cur.slides[i][k]=v; }
-function updListTitle(listId, i, val) {
-  const els = document.querySelectorAll('#'+listId+' .li-title');
-  if(els[i]) els[i].textContent = val || 'Sin título';
+function moveUp(i){if(i>0){[cur.slides[i],cur.slides[i-1]]=[cur.slides[i-1],cur.slides[i]];renderSlideCards();}}
+function moveDown(i){if(i<cur.slides.length-1){[cur.slides[i],cur.slides[i+1]]=[cur.slides[i+1],cur.slides[i]];renderSlideCards();}}
+
+function confirmDelSlide(i){
+  document.getElementById('modal-title').textContent='Eliminar slide';
+  document.getElementById('modal-body').textContent=`¿Eliminás el slide ${i+1} "${cur.slides[i]?.titulo||'Sin título'}"?`;
+  document.getElementById('modal-ok').onclick=()=>{cur.slides.splice(i,1);renderSlideCards();closeModal();};
+  document.getElementById('modal').classList.add('on');
 }
 
-function addSlide() {
-  cur.slides.push({ id: uid(), tipo:'texto', type:'texto', titulo:'', title:'', cuerpo:'', msg:'', imagen_url:'', video_url:'' });
-  slideIdx = cur.slides.length - 1; renderSlides();
+// ══════════ ZONAS ══════════
+function renderZonaTab(){
+  const z=cur.zonas;
+  const wrap=document.getElementById('hs-wrap'),noimg=document.getElementById('zona-noimg'),img=document.getElementById('hs-img');
+  if(z.imagen_base){img.src=z.imagen_base;wrap.style.display='block';noimg.style.display='none';}
+  else{wrap.style.display='none';noimg.style.display='block';}
+  renderHsDots(); renderHsCards();
 }
-function delSlide(i) {
-  cur.slides.splice(i,1);
-  slideIdx = cur.slides.length ? Math.max(0,i-1) : null; renderSlides();
-}
-function moveSlide(i, dir) {
-  const j=i+dir; if(j<0||j>=cur.slides.length) return;
-  [cur.slides[i],cur.slides[j]]=[cur.slides[j],cur.slides[i]];
-  slideIdx=j; renderSlides();
-}
-
-// ══════════════ ZONAS ══════════════
-function renderZonas() {
-  const z = cur.zonas;
-  const wrap=document.getElementById('hs-wrap'), noimg=document.getElementById('zona-noimg'), img=document.getElementById('hs-img');
-  if (z.imagen_base) { img.src=z.imagen_base; wrap.style.display='inline-block'; noimg.style.display='none'; }
-  else { wrap.style.display='none'; noimg.style.display='flex'; }
-  renderHsDots(); renderHsList();
-}
-function renderHsDots() {
+function renderHsDots(){
   const wrap=document.getElementById('hs-wrap');
   wrap.querySelectorAll('.hs-dot').forEach(d=>d.remove());
   (cur.zonas.hotspots||[]).forEach((h,i)=>{
     const d=document.createElement('div');
     d.className='hs-dot'+(hsIdx===i?' sel':'');
-    d.style.left=(h.x*100)+'%'; d.style.top=(h.y*100)+'%';
-    d.textContent=i+1;
-    d.onclick=e=>{e.stopPropagation();selHs(i);};
+    d.style.left=(h.x*100)+'%';d.style.top=(h.y*100)+'%';d.textContent=i+1;
+    d.onclick=e=>{e.stopPropagation();editHs(i);};
     wrap.appendChild(d);
   });
 }
-function renderHsList() {
+function renderHsCards(){
+  const el=document.getElementById('hs-cards');
   const hs=cur.zonas.hotspots||[];
-  document.getElementById('hs-list').innerHTML = hs.length
-    ? hs.map((h,i)=>`<div class="hs-row ${hsIdx===i?'sel':''}" onclick="selHs(${i})">
-        <div class="hs-num ${hsIdx===i?'sel':''}">${i+1}</div>
-        <div style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(h.nombre||'Sin nombre')}</div>
-      </div>`).join('')
-    : `<div style="color:var(--text3);font-size:12px">Sin hotspots todavía.</div>`;
+  if(!hs.length){el.innerHTML='';return;}
+  el.innerHTML=hs.map((h,i)=>`
+    <div class="item-card">
+      <div class="item-card-body">
+        <div class="item-num">Hotspot ${i+1}</div>
+        <div class="item-title">${esc(h.nombre||'Sin nombre')}</div>
+        ${h.descripcion?`<div class="item-preview">${esc(h.descripcion)}</div>`:''}
+      </div>
+      <div class="item-actions">
+        <button class="item-action ia-edit" onclick="editHs(${i})">✏ Editar</button>
+        <button class="item-action ia-del" onclick="confirmDelHs(${i})">🗑</button>
+      </div>
+    </div>`).join('');
 }
-function selHs(i) {
-  hsIdx=i; const h=cur.zonas.hotspots[i];
-  document.getElementById('hs-nombre').value=h.nombre||'';
-  document.getElementById('hs-desc').value=h.descripcion||'';
-  document.getElementById('hs-editor').style.display='block';
-  renderHsDots(); renderHsList();
+async function uploadZonaBase(event){
+  const f=event.target.files[0];if(!f)return;
+  toast('Subiendo imagen…','info');
+  try{const url=await uploadFile(f,'zonas/');cur.zonas.imagen_base=url;renderZonaTab();toast('Imagen cargada','ok');}
+  catch(e){toast('Error: '+e.message,'err');}
 }
-function startAddHs() {
+function startAddHs(){
   if(!cur.zonas.imagen_base){toast('Primero subí una imagen base','err');return;}
-  addingHs=true;
-  document.getElementById('hs-img').style.cursor='crosshair';
-  document.getElementById('hs-hint').style.display='inline';
-  toast('Hacé clic en la imagen para colocar el hotspot','info');
+  addingHs=true;toast('Tocá la imagen para colocar el hotspot','info');
 }
-function imgClick(event) {
-  if(!addingHs) return;
-  addingHs=false;
-  document.getElementById('hs-img').style.cursor='default';
-  document.getElementById('hs-hint').style.display='none';
+function imgClick(event){
+  if(!addingHs)return;addingHs=false;
   const rect=event.currentTarget.getBoundingClientRect();
   const x=+((event.clientX-rect.left)/rect.width).toFixed(4);
   const y=+((event.clientY-rect.top)/rect.height).toFixed(4);
   cur.zonas.hotspots.push({id:uid(),nombre:'',descripcion:'',x,y});
   hsIdx=cur.zonas.hotspots.length-1;
-  renderHsDots(); renderHsList(); selHs(hsIdx);
+  renderHsDots();renderHsCards();editHs(hsIdx);
 }
-async function uploadZonaBase(event) {
-  const f=event.target.files[0]; if(!f) return;
-  toast('Subiendo imagen base…','info');
-  try { const url=await uploadFile(f,'zonas/'); cur.zonas.imagen_base=url; renderZonas(); toast('Imagen cargada','ok'); }
-  catch(e) { toast('Error: '+e.message,'err'); }
+function editHs(i){
+  hsIdx=i;const h=cur.zonas.hotspots[i];
+  document.getElementById('hs-nombre').value=h.nombre||'';
+  document.getElementById('hs-desc').value=h.descripcion||'';
+  goTo('s-hs');
 }
-function saveHs() {
-  if(hsIdx===null) return;
+function saveHsAndBack(){
+  if(hsIdx===null){goBack('s-module');return;}
   cur.zonas.hotspots[hsIdx].nombre=document.getElementById('hs-nombre').value;
   cur.zonas.hotspots[hsIdx].descripcion=document.getElementById('hs-desc').value;
-  renderHsDots(); renderHsList(); toast('Hotspot guardado','ok');
+  renderHsDots();renderHsCards();goBack('s-module');
 }
-function deleteHs() {
-  if(hsIdx===null) return;
-  cur.zonas.hotspots.splice(hsIdx,1); hsIdx=null;
-  document.getElementById('hs-editor').style.display='none';
-  renderHsDots(); renderHsList();
+function deleteHsAndBack(){
+  cur.zonas.hotspots.splice(hsIdx,1);hsIdx=null;
+  renderHsDots();renderHsCards();goBack('s-module');
+}
+function confirmDelHs(i){
+  document.getElementById('modal-title').textContent='Eliminar hotspot';
+  document.getElementById('modal-body').textContent=`¿Eliminás "${cur.zonas.hotspots[i]?.nombre||'hotspot '+(i+1)}"?`;
+  document.getElementById('modal-ok').onclick=()=>{cur.zonas.hotspots.splice(i,1);renderHsDots();renderHsCards();closeModal();};
+  document.getElementById('modal').classList.add('on');
 }
 
-// ══════════════ QUIZ ══════════════
-function renderQuiz() {
-  const q=cur.quiz;
-  document.getElementById('quiz-items').innerHTML = q.length
-    ? q.map((r,i)=>`<div class="list-item ${qIdx===i?'active':''}" onclick="selQ(${i})">
-        <div class="li-num">${i+1}</div>
-        <div class="li-title">${esc(r.pregunta||'Sin pregunta')}</div>
-      </div>`).join('')
-    : `<div class="empty" style="height:80px"><span style="font-size:12px">Sin preguntas</span></div>`;
-  if(qIdx!==null&&q[qIdx]) renderQEdit(qIdx);
-  else document.getElementById('quiz-edit').innerHTML=`<div class="empty"><div class="empty-icon">❓</div><div style="font-size:13px">Seleccioná o creá una pregunta</div></div>`;
+// ══════════ QUIZ ══════════
+function renderQuizCards(){
+  const el=document.getElementById('quiz-list');
+  if(!cur.quiz.length){
+    el.innerHTML=`<div class="empty-state"><div class="empty-icon">❓</div><div class="empty-label">Sin preguntas todavía.<br>Tocá ＋ para agregar una.</div></div>`;
+    return;
+  }
+  el.innerHTML=cur.quiz.map((q,i)=>`
+    <div class="item-card">
+      <div class="item-card-body">
+        <div class="item-num">Pregunta ${i+1}</div>
+        <div class="item-title">${esc(q.pregunta||'Sin pregunta')}</div>
+        <div class="item-type">${(q.opciones||[]).length} opciones · correcta: ${(q.opciones||[])[q.correcta]?esc((q.opciones||[])[q.correcta]).slice(0,30):'?'}</div>
+      </div>
+      <div class="item-actions">
+        <button class="item-action ia-edit" onclick="editQ(${i})">✏ Editar</button>
+        <button class="item-action ia-del" onclick="confirmDelQ(${i})">🗑</button>
+      </div>
+    </div>`).join('');
 }
-function selQ(i){qIdx=i;renderQuiz();}
-function renderQEdit(i) {
-  const q=cur.quiz[i], opts=q.opciones||['','','',''];
-  document.getElementById('quiz-edit').innerHTML=`
-    <div class="panel-title">Pregunta ${i+1} <button class="btn btn-danger btn-sm" onclick="delQ(${i})">✕</button></div>
-    <div class="field"><label>Enunciado</label>
-      <textarea style="min-height:90px" placeholder="¿Cuál es…?" oninput="setQF(${i},'pregunta',this.value);updListTitle('quiz-items',${i},this.value)">${esc(q.pregunta||'')}</textarea>
+function addQ(){
+  cur.quiz.push({id:uid(),pregunta:'',opciones:['','','',''],correcta:0,explicacion:''});
+  editQ(cur.quiz.length-1);
+}
+function editQ(i){
+  qIdx=i;
+  document.getElementById('quiz-topbar-title').textContent=`Pregunta ${i+1}`;
+  renderQEditorBody(i);goTo('s-quiz');
+}
+function renderQEditorBody(i){
+  const q=cur.quiz[i];const opts=q.opciones||['','','',''];
+  document.getElementById('quiz-editor-body').innerHTML=`
+    <div class="field"><label>Enunciado de la pregunta</label>
+      <textarea id="qe-preg" style="min-height:110px" placeholder="¿Cuál es…?">${esc(q.pregunta||'')}</textarea>
     </div>
     <div class="field"><label>Opciones — marcá la correcta</label>
-      ${opts.map((o,oi)=>`<div class="opt-row">
-        <input type="radio" class="opt-radio" name="c${i}" ${q.correcta===oi?'checked':''} onchange="setQF(${i},'correcta',${oi})">
-        <input type="text" value="${esc(o)}" placeholder="Opción ${oi+1}" oninput="setOpt(${i},${oi},this.value)" style="flex:1">
-        ${opts.length>2?`<button class="btn btn-ghost btn-sm" onclick="delOpt(${i},${oi})" style="padding:4px 7px">✕</button>`:''}
-      </div>`).join('')}
-      ${opts.length<6?`<button class="btn btn-ghost btn-sm" style="margin-top:4px" onclick="addOpt(${i})">+ Opción</button>`:''}
+      ${opts.map((o,oi)=>`
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">
+          <input type="radio" name="qcorr" style="accent-color:var(--accent);width:18px;height:18px;cursor:pointer;flex-shrink:0" ${q.correcta===oi?'checked':''} onchange="cur.quiz[${i}].correcta=${oi}">
+          <input type="text" value="${esc(o)}" placeholder="Opción ${oi+1}" style="flex:1" oninput="cur.quiz[${i}].opciones[${oi}]=this.value">
+          ${opts.length>2?`<button class="btn btn-ghost btn-sm" onclick="delOpt(${i},${oi})" style="padding:6px 10px;flex-shrink:0">✕</button>`:''}
+        </div>`).join('')}
+      ${opts.length<6?`<button class="btn btn-ghost btn-sm" onclick="addOpt(${i})">＋ Opción</button>`:''}
     </div>
     <div class="field"><label>Explicación (opcional)</label>
-      <textarea style="min-height:55px" placeholder="Porque…" oninput="setQF(${i},'explicacion',this.value)">${esc(q.explicacion||'')}</textarea>
-    </div>`;
+      <textarea id="qe-exp" style="min-height:70px" placeholder="Porque…">${esc(q.explicacion||'')}</textarea>
+    </div>
+    <div style="height:20px"></div>
+    <button class="btn btn-red btn-full" onclick="confirmDelQ(${i});goBack('s-module')">🗑 Eliminar pregunta</button>
+  `;
 }
-function setQF(i,k,v){if(cur.quiz[i])cur.quiz[i][k]=v;}
-function setOpt(i,oi,v){cur.quiz[i].opciones[oi]=v;}
-function addOpt(i){cur.quiz[i].opciones.push('');renderQEdit(i);}
-function delOpt(i,oi){const q=cur.quiz[i];q.opciones.splice(oi,1);if(q.correcta>=q.opciones.length)q.correcta=0;renderQEdit(i);}
-function addQ(){cur.quiz.push({id:uid(),pregunta:'',opciones:['','','',''],correcta:0,explicacion:''});qIdx=cur.quiz.length-1;renderQuiz();}
-function delQ(i){cur.quiz.splice(i,1);qIdx=cur.quiz.length?Math.max(0,i-1):null;renderQuiz();}
+function saveQAndBack(){
+  const q=cur.quiz[qIdx];if(!q){goBack('s-module');return;}
+  q.pregunta=document.getElementById('qe-preg')?.value||q.pregunta;
+  q.explicacion=document.getElementById('qe-exp')?.value||q.explicacion;
+  renderQuizCards();goBack('s-module');
+}
+function addOpt(i){cur.quiz[i].opciones.push('');renderQEditorBody(i);}
+function delOpt(i,oi){const q=cur.quiz[i];q.opciones.splice(oi,1);if(q.correcta>=q.opciones.length)q.correcta=0;renderQEditorBody(i);}
+function confirmDelQ(i){
+  document.getElementById('modal-title').textContent='Eliminar pregunta';
+  document.getElementById('modal-body').textContent=`¿Eliminás la pregunta ${i+1}?`;
+  document.getElementById('modal-ok').onclick=()=>{cur.quiz.splice(i,1);renderQuizCards();closeModal();};
+  document.getElementById('modal').classList.add('on');
+}
+
+// ── OBSERVATIONS ──
+function openObs(){
+  const key='obs_'+(cur?.data?.id||'new');
+  const saved=localStorage.getItem(key)||'';
+  document.getElementById('obs-text').value=saved;
+  document.getElementById('obs-sub').textContent=`Notas para "${cur?.data?.nombre||'este módulo'}"`;
+  document.getElementById('obs-overlay').classList.add('on');
+}
+function closeObs(){document.getElementById('obs-overlay').classList.remove('on');}
+function closeObsIfBg(e){if(e.target===document.getElementById('obs-overlay'))closeObs();}
+function saveObs(){
+  const key='obs_'+(cur?.data?.id||'new');
+  localStorage.setItem(key,document.getElementById('obs-text').value);
+  toast('Notas guardadas','ok');closeObs();
+}
+function copyObs(){
+  const txt=document.getElementById('obs-text').value;
+  if(!txt){toast('No hay notas para copiar','err');return;}
+  navigator.clipboard?.writeText(txt).then(()=>toast('Copiado al portapapeles','ok')).catch(()=>toast('Seleccioná el texto manualmente','info'));
+}
+
+// ── UPLOAD ──
+async function uploadFile(file,prefix){
+  const ext=file.name.split('.').pop().toLowerCase();
+  const name=`${prefix}${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
+  const res=await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${name}`,{
+    method:'POST',headers:{'Authorization':`Bearer ${SB_KEY}`,'Content-Type':file.type},body:file
+  });
+  if(!res.ok)throw new Error(await res.text());
+  return`${STORAGE}/${name}`;
+}
 
 // ── MODAL ──
 function closeModal(){document.getElementById('modal').classList.remove('on');}
@@ -776,8 +936,8 @@ document.getElementById('modal').addEventListener('click',e=>{if(e.target===docu
 let _tt;
 function toast(msg,type='info'){
   const el=document.getElementById('toast');
-  el.textContent=msg; el.className='show '+{ok:'t-ok',err:'t-err',info:'t-info'}[type];
-  clearTimeout(_tt); _tt=setTimeout(()=>el.className='',3200);
+  el.textContent=msg;el.className='show '+{ok:'t-ok',err:'t-err',info:'t-info'}[type];
+  clearTimeout(_tt);_tt=setTimeout(()=>el.className='',3000);
 }
 
 // ── UTILS ──
