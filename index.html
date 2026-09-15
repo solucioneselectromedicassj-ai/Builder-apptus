@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AppTus Builder</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0F1923;
+  --sidebar: #0D1720;
+  --surface: #162332;
+  --surface2: #1E3148;
+  --border: #243447;
+  --accent: #2DD4BF;
+  --text: #E2E8F0;
+  --text2: #8EA8C0;
+  --text3: #4A6280;
+  --danger: #EF4444;
+  --warn: #F59E0B;
+  --success: #10B981;
+  --r: 6px;
+  --font: system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+body { font-family: var(--font); background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
+
+/* ── LOGIN ── */
+#login-screen {
+  display: flex; align-items: center; justify-content: center; height: 100vh;
+}
+.login-card {
+  width: 340px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 40px 32px;
+}
+.brand { font-size: 11px; font-weight: 700; letter-spacing: .1em; color: var(--accent); text-transform: uppercase; margin-bottom: 6px; }
+.login-card h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+.login-card p { font-size: 13px; color: var(--text2); margin-bottom: 28px; }
+
+/* ── INPUTS ── */
+label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 5px; }
+input, textarea, select {
+  width: 100%; background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--r); color: var(--text); font-family: var(--font);
+  font-size: 13px; padding: 8px 11px; outline: none; transition: border-color .15s;
+}
+input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+select option { background: var(--surface); }
+.field { margin-bottom: 14px; }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 14px; border-radius: var(--r); font-family: var(--font);
+  font-size: 13px; font-weight: 500; cursor: pointer; border: none;
+  transition: opacity .15s, background .15s; white-space: nowrap;
+}
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn-primary { background: var(--accent); color: #0F1923; }
+.btn-primary:hover:not(:disabled) { background: #25b5a4; }
+.btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+.btn-ghost:hover:not(:disabled) { background: var(--surface2); color: var(--text); }
+.btn-danger { background: transparent; color: var(--danger); border: 1px solid #3d1212; }
+.btn-danger:hover:not(:disabled) { background: #1c0808; }
+.btn-green { background: #064e3b; color: #6ee7b7; border: 1px solid #065f46; }
+.btn-green:hover:not(:disabled) { background: #065f46; }
+.btn-sm { padding: 4px 10px; font-size: 11px; }
+.btn-full { width: 100%; justify-content: center; }
+
+/* ── APP SHELL ── */
+#app { display: none; height: 100vh; }
+#app.on { display: flex; }
+
+/* ── SIDEBAR ── */
+#sidebar {
+  width: 252px; flex-shrink: 0; background: var(--sidebar);
+  border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden;
+}
+.sb-head { padding: 14px 14px 12px; border-bottom: 1px solid var(--border); }
+.sb-brand { font-size: 10px; font-weight: 700; color: var(--accent); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 2px; }
+.sb-sub { font-size: 11px; color: var(--text3); }
+.sb-search { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+.sb-search input { font-size: 12px; padding: 6px 9px; }
+#mod-list { flex: 1; overflow-y: auto; padding: 5px; }
+.mod-item {
+  padding: 9px 10px; border-radius: var(--r); cursor: pointer;
+  margin-bottom: 2px; border: 1px solid transparent; transition: background .1s;
+}
+.mod-item:hover { background: var(--surface); }
+.mod-item.active { background: var(--surface); border-color: var(--accent); }
+.mod-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mod-meta { display: flex; gap: 6px; align-items: center; margin-top: 3px; }
+.tag { font-size: 10px; color: var(--text3); background: var(--surface2); padding: 1px 6px; border-radius: 3px; }
+.badge { font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 99px; text-transform: uppercase; letter-spacing: .03em; }
+.b-draft { background: #112311; color: #4ade80; }
+.b-pub { background: #0d2a3a; color: var(--accent); }
+.sb-foot { padding: 9px 10px; border-top: 1px solid var(--border); display: flex; gap: 7px; }
+
+/* ── MAIN ── */
+#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+#no-sel {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; color: var(--text3); gap: 10px; text-align: center;
+}
+
+#editor { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+#editor.on { display: flex; }
+
+/* ── MOD HEADER ── */
+#mod-head {
+  padding: 13px 18px; border-bottom: 1px solid var(--border);
+  background: var(--surface); display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap;
+}
+.head-fields { flex: 1; display: flex; gap: 10px; flex-wrap: wrap; min-width: 0; }
+.head-fields input { font-size: 13px; padding: 7px 10px; }
+.head-actions { display: flex; gap: 7px; align-items: center; }
+
+/* ── TABS ── */
+#tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--sidebar); padding: 0 18px; }
+.tab {
+  padding: 11px 16px; font-size: 13px; font-weight: 500; color: var(--text2);
+  cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent;
+  margin-bottom: -1px; transition: color .15s, border-color .15s; font-family: var(--font);
+}
+.tab:hover { color: var(--text); }
+.tab.on { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ── PANELS ── */
+#panels { flex: 1; overflow: hidden; display: flex; }
+.panel { display: none; width: 100%; }
+.panel.on { display: flex; }
+
+/* ── SLIDES ── */
+#p-slides { flex-direction: row; }
+#slide-list {
+  width: 190px; flex-shrink: 0; border-right: 1px solid var(--border);
+  background: var(--sidebar); display: flex; flex-direction: column;
+}
+.list-head {
+  padding: 10px 11px; border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .05em;
+}
+#slide-items, #quiz-items { flex: 1; overflow-y: auto; padding: 5px; }
+.list-item {
+  padding: 7px 9px; border-radius: var(--r); cursor: pointer; margin-bottom: 2px;
+  border: 1px solid transparent; transition: background .1s;
+}
+.list-item:hover { background: var(--surface); }
+.list-item.active { background: var(--surface); border-color: var(--accent); }
+.li-num { font-size: 10px; color: var(--text3); }
+.li-title { font-size: 12px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.li-type { font-size: 10px; color: var(--text3); }
+
+#slide-edit, #quiz-edit { flex: 1; overflow-y: auto; padding: 22px; }
+
+.panel-title {
+  font-size: 14px; font-weight: 600; margin-bottom: 18px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.panel-title-btns { display: flex; gap: 5px; }
+
+/* ── IMAGE UPLOAD ── */
+.upload-area {
+  border: 2px dashed var(--border); border-radius: var(--r);
+  padding: 20px; text-align: center; cursor: pointer; transition: border-color .15s;
+}
+.upload-area:hover, .upload-area.drag { border-color: var(--accent); background: rgba(45,212,191,.04); }
+.img-preview { max-width: 100%; max-height: 200px; border-radius: var(--r); display: block; margin: 0 auto 10px; object-fit: contain; }
+
+/* ── ZONAS ── */
+#p-zonas { flex-direction: row; }
+#zona-canvas { flex: 1; overflow: auto; padding: 18px; display: flex; flex-direction: column; }
+#zona-toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+#hs-wrap { position: relative; display: inline-block; user-select: none; }
+#hs-img { display: block; max-width: 100%; max-height: 500px; border-radius: var(--r); }
+#zona-noimg {
+  width: 100%; height: 280px; border: 2px dashed var(--border); border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text3); font-size: 13px; text-align: center; padding: 20px;
+}
+.hs-dot {
+  position: absolute; width: 26px; height: 26px; border-radius: 50%;
+  background: var(--accent); border: 3px solid #0F1923;
+  transform: translate(-50%, -50%); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: #0F1923;
+  transition: transform .1s; z-index: 2;
+}
+.hs-dot:hover { transform: translate(-50%, -50%) scale(1.2); }
+.hs-dot.sel { background: var(--warn); }
+
+#zona-side {
+  width: 270px; flex-shrink: 0; border-left: 1px solid var(--border);
+  background: var(--sidebar); overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px;
+}
+.hs-row {
+  display: flex; align-items: center; gap: 7px; padding: 6px 8px;
+  border-radius: 4px; cursor: pointer; transition: background .1s;
+}
+.hs-row:hover { background: var(--surface); }
+.hs-row.sel { background: var(--surface); }
+.hs-num {
+  width: 22px; height: 22px; border-radius: 50%; background: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: #0F1923; flex-shrink: 0;
+}
+.hs-num.sel { background: var(--warn); }
+.hs-label { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.sec-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; }
+
+/* ── QUIZ ── */
+#p-quiz { flex-direction: row; }
+#quiz-list { width: 190px; flex-shrink: 0; border-right: 1px solid var(--border); background: var(--sidebar); display: flex; flex-direction: column; }
+.opt-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+.opt-radio { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; flex-shrink: 0; }
+
+/* ── EMPTY STATE ── */
+.empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text3); gap: 10px; }
+.empty-icon { font-size: 44px; opacity: .35; }
+
+/* ── MODAL ── */
+#modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none; align-items: center; justify-content: center; z-index: 900; }
+#modal.on { display: flex; }
+.modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 26px; width: 400px; max-width: 90vw; }
+.modal-box h3 { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed; bottom: 18px; right: 18px; padding: 10px 16px;
+  border-radius: var(--r); font-size: 13px; font-weight: 500;
+  opacity: 0; transform: translateY(6px); transition: opacity .2s, transform .2s;
+  pointer-events: none; z-index: 999;
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+.t-ok { background: #064e3b; color: #6ee7b7; }
+.t-err { background: #7f1d1d; color: #fca5a5; }
+.t-info { background: #1e3a5f; color: #93c5fd; }
+
+hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+.row2 { display: flex; gap: 10px; }
+.row2 > * { flex: 1; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,.2); border-top-color: currentColor; border-radius: 50%; animation: spin .6s linear infinite; }
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="brand">AppTus</div>
+    <h1>Builder</h1>
+    <p>Herramienta de creación de módulos</p>
+    <div class="field">
+      <label>Clave de acceso</label>
+      <input type="password" id="login-pw" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div id="login-err" style="color:var(--danger);font-size:12px;margin-bottom:10px;display:none">Clave incorrecta.</div>
+    <button class="btn btn-primary btn-full" onclick="doLogin()">Entrar →</button>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sb-head">
+      <div class="sb-brand">AppTus Builder</div>
+      <div class="sb-sub">Módulos de capacitación</div>
+    </div>
+    <div class="sb-search">
+      <input type="text" id="search" placeholder="Buscar…" oninput="filterList()">
+    </div>
+    <div id="mod-list">
+      <div class="empty" style="height:120px"><span style="font-size:12px">Cargando…</span></div>
+    </div>
+    <div class="sb-foot">
+      <button class="btn btn-primary" style="flex:1" onclick="newMod()">+ Nuevo módulo</button>
+      <button class="btn btn-ghost" onclick="doLogout()" title="Salir" style="padding:7px 10px">↩</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+
+    <div id="no-sel">
+      <div style="font-size:38px;opacity:.2">📦</div>
+      <div style="font-size:13px">Seleccioná un módulo o creá uno nuevo</div>
+    </div>
+
+    <div id="editor">
+
+      <!-- MOD HEADER -->
+      <div id="mod-head">
+        <div class="head-fields">
+          <input type="text" id="f-titulo" placeholder="Título del módulo" style="flex:2;min-width:180px">
+          <input type="text" id="f-equipo" placeholder="Equipo (ej: ECG, Monitor)" style="flex:1.2;min-width:140px">
+          <input type="text" id="f-desc" placeholder="Descripción breve" style="flex:2;min-width:180px">
+        </div>
+        <div class="head-actions">
+          <button class="btn btn-ghost" onclick="saveMod('borrador')">Guardar borrador</button>
+          <button class="btn btn-green" onclick="saveMod('publicado')">✓ Publicar</button>
+          <button class="btn btn-danger" onclick="confirmDel()" style="padding:7px 10px" title="Eliminar módulo">✕</button>
+        </div>
+      </div>
+
+      <!-- TABS -->
+      <div id="tabs">
+        <button class="tab on" data-t="slides" onclick="switchTab('slides')">Slides</button>
+        <button class="tab" data-t="zonas" onclick="switchTab('zonas')">Zonas interactivas</button>
+        <button class="tab" data-t="quiz" onclick="switchTab('quiz')">Quiz</button>
+      </div>
+
+      <!-- PANELS -->
+      <div id="panels">
+
+        <!-- ── SLIDES ── -->
+        <div class="panel on" id="p-slides">
+          <div id="slide-list">
+            <div class="list-head">
+              <span>Slides</span>
+              <button class="btn btn-primary btn-sm" onclick="addSlide()">+ Agregar</button>
+            </div>
+            <div id="slide-items"></div>
+          </div>
+          <div id="slide-edit">
+            <div class="empty"><div class="empty-icon">🖼</div><div style="font-size:13px">Seleccioná o creá un slide</div></div>
+          </div>
+        </div>
+
+        <!-- ── ZONAS ── -->
+        <div class="panel" id="p-zonas">
+          <div id="zona-canvas">
+            <div id="zona-toolbar">
+              <span style="font-size:13px;font-weight:600;color:var(--text2)">Imagen del equipo</span>
+              <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+                📁 Subir imagen base
+                <input type="file" id="zona-file" accept="image/*" style="display:none" onchange="uploadZonaBase(event)">
+              </label>
+              <button class="btn btn-primary btn-sm" id="btn-add-hs" onclick="startAddHs()">+ Hotspot</button>
+              <span id="hs-hint" style="font-size:11px;color:var(--text3);display:none">Clic en la imagen para colocar</span>
+            </div>
+            <div id="hs-wrap" style="display:none">
+              <img id="hs-img" src="" alt="" onclick="imgClick(event)">
+            </div>
+            <div id="zona-noimg">Subí una imagen del equipo para agregar zonas interactivas con hotspots</div>
+          </div>
+          <div id="zona-side">
+            <div class="sec-title">Hotspots</div>
+            <div id="hs-list"><div style="color:var(--text3);font-size:12px">Sin hotspots todavía.</div></div>
+            <hr>
+            <div id="hs-editor" style="display:none">
+              <div class="sec-title" style="margin-bottom:10px">Editar hotspot</div>
+              <div class="field">
+                <label>Nombre</label>
+                <input type="text" id="hs-nombre" placeholder="ej: Pantalla principal">
+              </div>
+              <div class="field">
+                <label>Descripción / Info</label>
+                <textarea id="hs-desc" placeholder="Información que aparece al tocar" style="min-height:70px"></textarea>
+              </div>
+              <div style="display:flex;gap:7px">
+                <button class="btn btn-primary" style="flex:1;font-size:12px" onclick="saveHs()">Guardar hotspot</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteHs()">✕</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── QUIZ ── -->
+        <div class="panel" id="p-quiz">
+          <div id="quiz-list">
+            <div class="list-head">
+              <span>Preguntas</span>
+              <button class="btn btn-primary btn-sm" onclick="addQ()">+ Agregar</button>
+            </div>
+            <div id="quiz-items"></div>
+          </div>
+          <div id="quiz-edit">
+            <div class="empty"><div class="empty-icon">❓</div><div style="font-size:13px">Seleccioná o creá una pregunta</div></div>
+          </div>
+        </div>
+
+      </div><!-- /panels -->
+    </div><!-- /editor -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ── MODAL ── -->
+<div id="modal">
+  <div class="modal-box">
+    <h3 id="modal-title">Confirmar</h3>
+    <div id="modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-danger" id="modal-ok">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── CONFIG ──
+const SB_URL  = 'https://drfyicdwwltzzahqixlz.supabase.co';
+const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZnlpY2R3d2x0enphaHFpeGx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMjgzMDEsImV4cCI6MjA5NDkwNDMwMX0.Ar9pc4OAI09mb4Mu96wlSyimNNuLS54NZ-eqsh80pOU';
+const BUCKET  = 'apptus-media';
+const PASS    = 'SEM2026super';
+const STORAGE = `${SB_URL}/storage/v1/object/public/${BUCKET}`;
+
+const sb = window.supabase.createClient(SB_URL, SB_KEY);
+
+// ── STATE ──
+let mods = [];          // list cache
+let cur  = null;        // current full module object
+let slideIdx = null;
+let qIdx     = null;
+let hsIdx    = null;
+let addingHs = false;
+
+// ── AUTH ──
+document.getElementById('login-pw').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+function doLogin() {
+  if (document.getElementById('login-pw').value === PASS) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').classList.add('on');
+    loadMods();
+  } else {
+    document.getElementById('login-err').style.display = 'block';
+  }
+}
+
+function doLogout() {
+  document.getElementById('app').classList.remove('on');
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-pw').value = '';
+  cur = null; mods = [];
+  hideEditor();
+}
+
+// ── LOAD MODULES ──
+async function loadMods() {
+  const { data, error } = await sb
+    .from('at_modulos')
+    .select('id, titulo, equipo, descripcion, estado, updated_at')
+    .order('updated_at', { ascending: false });
+
+  if (error) { toast('Error al cargar: ' + error.message, 'err'); return; }
+  mods = data || [];
+  renderList();
+}
+
+function renderList(q = '') {
+  const lc = q.toLowerCase();
+  const filtered = mods.filter(m =>
+    (m.titulo||'').toLowerCase().includes(lc) ||
+    (m.equipo||'').toLowerCase().includes(lc)
+  );
+  const el = document.getElementById('mod-list');
+  if (!filtered.length) {
+    el.innerHTML = `<div class="empty" style="height:110px"><span style="font-size:12px">${q?'Sin resultados':'Sin módulos'}</span></div>`;
+    return;
+  }
+  el.innerHTML = filtered.map(m => `
+    <div class="mod-item ${cur?.id===m.id?'active':''}" onclick="selectMod('${m.id}')">
+      <div class="mod-name">${esc(m.titulo||'Sin título')}</div>
+      <div class="mod-meta">
+        ${m.equipo ? `<span class="tag">${esc(m.equipo)}</span>` : ''}
+        <span class="badge ${m.estado==='publicado'?'b-pub':'b-draft'}">${m.estado||'borrador'}</span>
+      </div>
+    </div>`).join('');
+}
+
+function filterList() { renderList(document.getElementById('search').value); }
+
+// ── SELECT / OPEN MODULE ──
+async function selectMod(id) {
+  const { data, error } = await sb.from('at_modulos').select('*').eq('id', id).single();
+  if (error) { toast('Error al abrir módulo', 'err'); return; }
+
+  // Ensure structure
+  if (!data.contenido)                   data.contenido = {};
+  if (!data.contenido.slides)            data.contenido.slides = [];
+  if (!data.contenido.zonas)             data.contenido.zonas  = { imagen_base: '', hotspots: [] };
+  if (!data.contenido.zonas.hotspots)    data.contenido.zonas.hotspots = [];
+  if (!data.contenido.quiz)              data.contenido.quiz   = [];
+
+  cur = data; slideIdx = null; qIdx = null; hsIdx = null;
+  renderList(document.getElementById('search').value);
+  showEditor();
+}
+
+function newMod() {
+  cur = {
+    id: null, titulo: '', equipo: '', descripcion: '', estado: 'borrador',
+    contenido: { slides: [], zonas: { imagen_base: '', hotspots: [] }, quiz: [] }
+  };
+  slideIdx = null; qIdx = null; hsIdx = null;
+  showEditor();
+  document.getElementById('f-titulo').focus();
+}
+
+function showEditor() {
+  document.getElementById('no-sel').style.display = 'none';
+  document.getElementById('editor').classList.add('on');
+  document.getElementById('f-titulo').value = cur.titulo || '';
+  document.getElementById('f-equipo').value = cur.equipo || '';
+  document.getElementById('f-desc').value   = cur.descripcion || '';
+  renderSlides(); renderZonas(); renderQuiz();
+  switchTab(document.querySelector('.tab.on')?.dataset.t || 'slides');
+}
+
+function hideEditor() {
+  document.getElementById('no-sel').style.display = 'flex';
+  document.getElementById('editor').classList.remove('on');
+}
+
+// ── SAVE ──
+async function saveMod(estado) {
+  const titulo = document.getElementById('f-titulo').value.trim();
+  if (!titulo) { toast('El módulo necesita un título', 'err'); return; }
+
+  const payload = {
+    titulo,
+    equipo:       document.getElementById('f-equipo').value.trim(),
+    descripcion:  document.getElementById('f-desc').value.trim(),
+    estado,
+    contenido:    cur.contenido,
+    updated_at:   new Date().toISOString()
+  };
+
+  let result;
+  if (cur.id) {
+    const { data, error } = await sb.from('at_modulos').update(payload).eq('id', cur.id).select().single();
+    if (error) { toast('Error al guardar: ' + error.message, 'err'); return; }
+    result = data;
+  } else {
+    const { data, error } = await sb.from('at_modulos')
+      .insert({ ...payload, created_at: new Date().toISOString() }).select().single();
+    if (error) { toast('Error al crear: ' + error.message, 'err'); return; }
+    result = data;
+  }
+
+  cur = { ...cur, ...result };
+  const idx = mods.findIndex(m => m.id === result.id);
+  if (idx >= 0) mods[idx] = { ...mods[idx], ...result };
+  else mods.unshift(result);
+  renderList(document.getElementById('search').value);
+  toast(estado === 'publicado' ? '✓ Módulo publicado' : 'Borrador guardado', 'ok');
+}
+
+// ── DELETE ──
+async function deleteMod() {
+  closeModal();
+  if (!cur?.id) { cur = null; hideEditor(); return; }
+  const { error } = await sb.from('at_modulos').delete().eq('id', cur.id);
+  if (error) { toast('Error al eliminar: ' + error.message, 'err'); return; }
+  mods = mods.filter(m => m.id !== cur.id);
+  renderList(document.getElementById('search').value);
+  cur = null; hideEditor();
+  toast('Módulo eliminado', 'info');
+}
+
+function confirmDel() {
+  document.getElementById('modal-title').textContent = 'Eliminar módulo';
+  document.getElementById('modal-body').innerHTML =
+    `<p style="color:var(--text2);font-size:13px">¿Eliminás "<strong>${esc(cur?.titulo||'Sin título')}</strong>"? No se puede deshacer.</p>`;
+  document.getElementById('modal-ok').onclick = deleteMod;
+  document.getElementById('modal').classList.add('on');
+}
+
+// ── TABS ──
+function switchTab(t) {
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', p.id === 'p-' + t));
+}
+
+// ── IMAGE UPLOAD (fetch, no SDK) ──
+async function uploadFile(file, prefix) {
+  const ext  = file.name.split('.').pop().toLowerCase();
+  const name = `${prefix}${Date.now()}_${rand()}.${ext}`;
+  const res  = await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${name}`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': file.type },
+    body: file
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(txt);
+  }
+  return `${STORAGE}/${name}`;
+}
+
+// ══════════════════════════════════════
+// SLIDES
+// ══════════════════════════════════════
+function renderSlides() {
+  const slides = cur.contenido.slides;
+  const el = document.getElementById('slide-items');
+  el.innerHTML = slides.length
+    ? slides.map((s, i) => `
+        <div class="list-item ${slideIdx===i?'active':''}" onclick="selSlide(${i})">
+          <div class="li-num">${i+1}</div>
+          <div class="li-title">${esc(s.titulo||'Sin título')}</div>
+          <div class="li-type">${s.tipo||'texto'}</div>
+        </div>`).join('')
+    : `<div class="empty" style="height:80px"><span style="font-size:12px">Sin slides</span></div>`;
+
+  if (slideIdx !== null && slides[slideIdx]) renderSlideEdit(slideIdx);
+  else document.getElementById('slide-edit').innerHTML =
+    `<div class="empty"><div class="empty-icon">🖼</div><div style="font-size:13px">Seleccioná o creá un slide</div></div>`;
+}
+
+function selSlide(i) { slideIdx = i; renderSlides(); }
+
+function renderSlideEdit(i) {
+  const s = cur.contenido.slides[i];
+  const canUp   = i > 0;
+  const canDown = i < cur.contenido.slides.length - 1;
+  document.getElementById('slide-edit').innerHTML = `
+    <div class="panel-title">
+      Slide ${i+1}
+      <div class="panel-title-btns">
+        ${canUp   ? `<button class="btn btn-ghost btn-sm" onclick="moveSlide(${i},-1)">↑</button>` : ''}
+        ${canDown ? `<button class="btn btn-ghost btn-sm" onclick="moveSlide(${i},1)">↓</button>` : ''}
+        <button class="btn btn-danger btn-sm" onclick="delSlide(${i})">✕</button>
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label>Tipo</label>
+        <select id="s-tipo" onchange="setSF(${i},'tipo',this.value);renderSlides()">
+          <option value="texto"  ${s.tipo==='texto' ?'selected':''}>Texto</option>
+          <option value="imagen" ${s.tipo==='imagen'?'selected':''}>Imagen + texto</option>
+          <option value="video"  ${s.tipo==='video' ?'selected':''}>Video</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Título del slide</label>
+        <input type="text" value="${esc(s.titulo||'')}" placeholder="Título" oninput="setSF(${i},'titulo',this.value);updSlideTitle(${i},this.value)">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Texto / Contenido</label>
+      <textarea style="min-height:110px" placeholder="Texto del slide…" oninput="setSF(${i},'cuerpo',this.value)">${esc(s.cuerpo||'')}</textarea>
+    </div>
+
+    ${s.tipo==='imagen' ? imgSection(i,s) : ''}
+    ${s.tipo==='video'  ? videoSection(i,s) : ''}
+  `;
+}
+
+function imgSection(i, s) {
+  return `
+    <div class="field">
+      <label>Imagen</label>
+      ${s.imagen_url ? `<img src="${s.imagen_url}" class="img-preview">` : ''}
+      <div class="upload-area" id="ua-${i}"
+           onclick="document.getElementById('fi-${i}').click()"
+           ondragover="event.preventDefault();this.classList.add('drag')"
+           ondragleave="this.classList.remove('drag')"
+           ondrop="dropImg(event,${i})">
+        <input type="file" id="fi-${i}" accept="image/*" style="display:none" onchange="pickImg(event,${i})">
+        <span style="color:var(--text3);font-size:13px">${s.imagen_url?'📁 Cambiar imagen':'📁 Subir imagen — o arrastrá aquí'}</span>
+      </div>
+    </div>`;
+}
+
+function videoSection(i, s) {
+  return `
+    <div class="field">
+      <label>URL del video (YouTube embed, Vimeo, o directo .mp4)</label>
+      <input type="text" value="${esc(s.video_url||'')}" placeholder="https://…" oninput="setSF(${i},'video_url',this.value)">
+    </div>`;
+}
+
+async function pickImg(event, i) {
+  const f = event.target.files[0]; if(!f) return;
+  await uploadSlideImg(f, i);
+}
+async function dropImg(event, i) {
+  event.preventDefault(); event.currentTarget.classList.remove('drag');
+  const f = event.dataTransfer.files[0]; if(!f) return;
+  await uploadSlideImg(f, i);
+}
+async function uploadSlideImg(file, i) {
+  toast('Subiendo…', 'info');
+  try {
+    const url = await uploadFile(file, 'slides/');
+    setSF(i, 'imagen_url', url);
+    renderSlideEdit(i);
+    toast('Imagen cargada', 'ok');
+  } catch(e) { toast('Error al subir imagen', 'err'); }
+}
+
+function setSF(i, field, val) {
+  if (!cur.contenido.slides[i]) return;
+  cur.contenido.slides[i][field] = val;
+}
+function updSlideTitle(i, val) {
+  const el = document.querySelectorAll('#slide-items .li-title')[i];
+  if (el) el.textContent = val || 'Sin título';
+}
+
+function addSlide() {
+  cur.contenido.slides.push({ id: uid(), tipo: 'texto', titulo: '', cuerpo: '', imagen_url: '', video_url: '' });
+  slideIdx = cur.contenido.slides.length - 1;
+  renderSlides();
+}
+function delSlide(i) {
+  cur.contenido.slides.splice(i, 1);
+  slideIdx = cur.contenido.slides.length ? Math.max(0, i-1) : null;
+  renderSlides();
+}
+function moveSlide(i, dir) {
+  const s = cur.contenido.slides;
+  const j = i + dir;
+  if (j < 0 || j >= s.length) return;
+  [s[i], s[j]] = [s[j], s[i]];
+  slideIdx = j;
+  renderSlides();
+}
+
+// ══════════════════════════════════════
+// ZONAS
+// ══════════════════════════════════════
+function renderZonas() {
+  const z = cur.contenido.zonas;
+  const wrap  = document.getElementById('hs-wrap');
+  const noimg = document.getElementById('zona-noimg');
+  const img   = document.getElementById('hs-img');
+
+  if (z.imagen_base) {
+    img.src = z.imagen_base;
+    wrap.style.display = 'inline-block';
+    noimg.style.display = 'none';
+  } else {
+    wrap.style.display = 'none';
+    noimg.style.display = 'flex';
+  }
+  renderHsDots();
+  renderHsList();
+}
+
+function renderHsDots() {
+  const wrap = document.getElementById('hs-wrap');
+  wrap.querySelectorAll('.hs-dot').forEach(d => d.remove());
+  (cur.contenido.zonas.hotspots || []).forEach((h, i) => {
+    const d = document.createElement('div');
+    d.className = 'hs-dot' + (hsIdx===i?' sel':'');
+    d.style.left = (h.x * 100) + '%';
+    d.style.top  = (h.y * 100) + '%';
+    d.textContent = i + 1;
+    d.onclick = e => { e.stopPropagation(); selHs(i); };
+    wrap.appendChild(d);
+  });
+}
+
+function renderHsList() {
+  const hs = cur.contenido.zonas.hotspots || [];
+  const el = document.getElementById('hs-list');
+  if (!hs.length) {
+    el.innerHTML = `<div style="color:var(--text3);font-size:12px">Sin hotspots. Subí una imagen y usá el botón "Hotspot".</div>`;
+    return;
+  }
+  el.innerHTML = hs.map((h, i) => `
+    <div class="hs-row ${hsIdx===i?'sel':''}" onclick="selHs(${i})">
+      <div class="hs-num ${hsIdx===i?'sel':''}">${i+1}</div>
+      <div class="hs-label">${esc(h.nombre||'Sin nombre')}</div>
+    </div>`).join('');
+}
+
+function selHs(i) {
+  hsIdx = i;
+  const h = cur.contenido.zonas.hotspots[i];
+  document.getElementById('hs-nombre').value = h.nombre || '';
+  document.getElementById('hs-desc').value   = h.descripcion || '';
+  document.getElementById('hs-editor').style.display = 'block';
+  renderHsDots(); renderHsList();
+}
+
+function startAddHs() {
+  if (!cur.contenido.zonas.imagen_base) { toast('Primero subí una imagen base', 'err'); return; }
+  addingHs = true;
+  document.getElementById('hs-img').style.cursor = 'crosshair';
+  document.getElementById('hs-hint').style.display = 'inline';
+  toast('Hacé clic en la imagen para colocar el hotspot', 'info');
+}
+
+function imgClick(event) {
+  if (!addingHs) return;
+  addingHs = false;
+  document.getElementById('hs-img').style.cursor = 'default';
+  document.getElementById('hs-hint').style.display = 'none';
+
+  const rect = event.currentTarget.getBoundingClientRect();
+  const x = +((event.clientX - rect.left) / rect.width).toFixed(4);
+  const y = +((event.clientY - rect.top)  / rect.height).toFixed(4);
+
+  cur.contenido.zonas.hotspots.push({ id: uid(), nombre: '', descripcion: '', x, y });
+  hsIdx = cur.contenido.zonas.hotspots.length - 1;
+  renderHsDots(); renderHsList(); selHs(hsIdx);
+}
+
+async function uploadZonaBase(event) {
+  const f = event.target.files[0]; if (!f) return;
+  toast('Subiendo imagen base…', 'info');
+  try {
+    const url = await uploadFile(f, 'zonas/');
+    cur.contenido.zonas.imagen_base = url;
+    renderZonas();
+    toast('Imagen base cargada', 'ok');
+  } catch(e) { toast('Error al subir imagen', 'err'); }
+}
+
+function saveHs() {
+  if (hsIdx === null) return;
+  cur.contenido.zonas.hotspots[hsIdx].nombre      = document.getElementById('hs-nombre').value;
+  cur.contenido.zonas.hotspots[hsIdx].descripcion = document.getElementById('hs-desc').value;
+  renderHsDots(); renderHsList();
+  toast('Hotspot guardado', 'ok');
+}
+
+function deleteHs() {
+  if (hsIdx === null) return;
+  cur.contenido.zonas.hotspots.splice(hsIdx, 1);
+  hsIdx = null;
+  document.getElementById('hs-editor').style.display = 'none';
+  renderHsDots(); renderHsList();
+}
+
+// ══════════════════════════════════════
+// QUIZ
+// ══════════════════════════════════════
+function renderQuiz() {
+  const quiz = cur.contenido.quiz;
+  const el = document.getElementById('quiz-items');
+  el.innerHTML = quiz.length
+    ? quiz.map((q, i) => `
+        <div class="list-item ${qIdx===i?'active':''}" onclick="selQ(${i})">
+          <div class="li-num">${i+1}</div>
+          <div class="li-title">${esc(q.pregunta||'Sin pregunta')}</div>
+        </div>`).join('')
+    : `<div class="empty" style="height:80px"><span style="font-size:12px">Sin preguntas</span></div>`;
+
+  if (qIdx !== null && quiz[qIdx]) renderQEdit(qIdx);
+  else document.getElementById('quiz-edit').innerHTML =
+    `<div class="empty"><div class="empty-icon">❓</div><div style="font-size:13px">Seleccioná o creá una pregunta</div></div>`;
+}
+
+function selQ(i) { qIdx = i; renderQuiz(); }
+
+function renderQEdit(i) {
+  const q = cur.contenido.quiz[i];
+  const opts = q.opciones || ['','','',''];
+  document.getElementById('quiz-edit').innerHTML = `
+    <div class="panel-title">
+      Pregunta ${i+1}
+      <button class="btn btn-danger btn-sm" onclick="delQ(${i})">✕</button>
+    </div>
+
+    <div class="field">
+      <label>Enunciado de la pregunta</label>
+      <textarea style="min-height:90px" placeholder="¿Cuál es…?" oninput="setQF(${i},'pregunta',this.value);updQTitle(${i},this.value)">${esc(q.pregunta||'')}</textarea>
+    </div>
+
+    <div class="field">
+      <label>Opciones — marcá la correcta</label>
+      <div id="opts-${i}">
+        ${opts.map((o, oi) => `
+          <div class="opt-row">
+            <input type="radio" class="opt-radio" name="c${i}" ${q.correcta===oi?'checked':''} onchange="setQF(${i},'correcta',${oi})">
+            <input type="text" value="${esc(o)}" placeholder="Opción ${oi+1}" oninput="setOpt(${i},${oi},this.value)" style="flex:1">
+            ${opts.length > 2 ? `<button class="btn btn-ghost btn-sm" onclick="delOpt(${i},${oi})" style="padding:4px 7px">✕</button>` : ''}
+          </div>`).join('')}
+      </div>
+      ${opts.length < 6 ? `<button class="btn btn-ghost btn-sm" style="margin-top:5px" onclick="addOpt(${i})">+ Agregar opción</button>` : ''}
+    </div>
+
+    <div class="field">
+      <label>Explicación (opcional — se muestra tras responder)</label>
+      <textarea style="min-height:60px" placeholder="Porque…" oninput="setQF(${i},'explicacion',this.value)">${esc(q.explicacion||'')}</textarea>
+    </div>
+  `;
+}
+
+function setQF(i, field, val) { if(cur.contenido.quiz[i]) cur.contenido.quiz[i][field] = val; }
+function setOpt(i, oi, val)   { cur.contenido.quiz[i].opciones[oi] = val; }
+function addOpt(i)  { cur.contenido.quiz[i].opciones.push(''); renderQEdit(i); }
+function delOpt(i, oi) {
+  const q = cur.contenido.quiz[i];
+  q.opciones.splice(oi, 1);
+  if (q.correcta >= q.opciones.length) q.correcta = 0;
+  renderQEdit(i);
+}
+function updQTitle(i, val) {
+  const el = document.querySelectorAll('#quiz-items .li-title')[i];
+  if (el) el.textContent = val || 'Sin pregunta';
+}
+
+function addQ() {
+  cur.contenido.quiz.push({ id: uid(), pregunta: '', opciones: ['','','',''], correcta: 0, explicacion: '' });
+  qIdx = cur.contenido.quiz.length - 1;
+  renderQuiz();
+}
+function delQ(i) {
+  cur.contenido.quiz.splice(i, 1);
+  qIdx = cur.contenido.quiz.length ? Math.max(0, i-1) : null;
+  renderQuiz();
+}
+
+// ── MODAL ──
+function closeModal() { document.getElementById('modal').classList.remove('on'); }
+document.getElementById('modal').addEventListener('click', e => { if(e.target===document.getElementById('modal')) closeModal(); });
+
+// ── TOAST ──
+let _tt;
+function toast(msg, type='info') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + { ok:'t-ok', err:'t-err', info:'t-info' }[type];
+  clearTimeout(_tt);
+  _tt = setTimeout(() => el.className = '', 3200);
+}
+
+// ── UTILS ──
+function uid()  { return crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2)+Date.now(); }
+function rand() { return Math.random().toString(36).slice(2,8); }
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+</script>
+</body>
+</html>
