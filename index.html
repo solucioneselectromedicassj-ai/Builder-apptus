@@ -451,12 +451,21 @@ function doLogout() {
 
 // ── LOAD MODULES ──
 async function loadMods() {
+  const el = document.getElementById('mod-list');
+  el.innerHTML = `<div class="empty" style="height:110px"><span style="font-size:12px">Cargando…</span></div>`;
   const { data, error } = await sb
     .from('at_modulos')
-    .select('id, titulo, equipo, descripcion, estado, updated_at')
+    .select('*')
     .order('updated_at', { ascending: false });
 
-  if (error) { toast('Error al cargar: ' + error.message, 'err'); return; }
+  if (error) {
+    el.innerHTML = `
+      <div style="padding:14px;font-size:12px">
+        <div style="color:var(--danger);margin-bottom:8px;word-break:break-word">⚠ ${esc(error.message)}</div>
+        <button class="btn btn-ghost btn-sm btn-full" onclick="loadMods()">↺ Reintentar</button>
+      </div>`;
+    return;
+  }
   mods = data || [];
   renderList();
 }
