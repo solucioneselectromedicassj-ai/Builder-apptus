@@ -2,56 +2,33 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>AppTus Builder</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#0F1923;--s1:#0D1720;--s2:#162332;--s3:#1E3148;
-  --border:#243447;--accent:#2DD4BF;--accentd:#1a8a7a;
-  --text:#E2E8F0;--t2:#8EA8C0;--t3:#4A6280;
-  --red:#EF4444;--green:#10B981;--warn:#F59E0B;
-  --r:10px;--font:system-ui,-apple-system,'Segoe UI',sans-serif;
+  --border:#243447;--accent:#2DD4BF;--text:#E2E8F0;--t2:#8EA8C0;--t3:#4A6280;
+  --red:#EF4444;--green:#10B981;--warn:#F59E0B;--r:10px;
+  --font:system-ui,-apple-system,'Segoe UI',sans-serif;
 }
 html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--bg);color:var(--text);}
 
-/* ── SCREEN SYSTEM ── */
+/* ── SCREENS ── */
 #root{position:relative;width:100%;height:100%;overflow:hidden;}
-.screen{
-  position:absolute;inset:0;display:flex;flex-direction:column;
-  background:var(--bg);overflow:hidden;
-  transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);
-  will-change:transform;
-}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg);overflow:hidden;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);will-change:transform;}
 .screen.active{transform:translateX(0);}
 .screen.behind{transform:translateX(-30%);}
 
 /* ── TOPBAR ── */
-.topbar{
-  display:flex;align-items:center;gap:10px;padding:14px 16px;
-  background:var(--s1);border-bottom:1px solid var(--border);
-  flex-shrink:0;min-height:56px;
-}
-.topbar-title{flex:1;font-size:16px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.topbar-sub{font-size:11px;color:var(--t3);}
-.back-btn{
-  width:36px;height:36px;border-radius:50%;border:none;background:var(--s3);
-  color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;
-}
-
-/* ── SCROLLABLE BODY ── */
-.screen-body{flex:1;overflow-y:auto;padding:12px;}
-.screen-body-notop{flex:1;overflow-y:auto;}
+.topbar{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--s1);border-bottom:1px solid var(--border);flex-shrink:0;min-height:52px;}
+.topbar-title{flex:1;font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.back-btn{width:36px;height:36px;border-radius:50%;border:none;background:var(--s3);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 
 /* ── INPUTS ── */
 label{display:block;font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;}
-input,textarea,select{
-  width:100%;background:var(--s1);border:1px solid var(--border);
-  border-radius:8px;color:var(--text);font-family:var(--font);
-  font-size:14px;padding:10px 12px;outline:none;transition:border-color .15s;
-}
+input,textarea,select{width:100%;background:var(--s1);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:14px;padding:10px 12px;outline:none;transition:border-color .15s;}
 input:focus,textarea:focus,select:focus{border-color:var(--accent);}
 textarea{resize:vertical;min-height:90px;line-height:1.5;}
 select option{background:var(--s2);}
@@ -59,12 +36,7 @@ select option{background:var(--s2);}
 .row2{display:flex;gap:10px;}.row2>.field{flex:1;}
 
 /* ── BUTTONS ── */
-.btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:6px;
-  padding:10px 18px;border-radius:8px;font-family:var(--font);
-  font-size:14px;font-weight:600;cursor:pointer;border:none;
-  transition:opacity .15s,transform .1s;-webkit-tap-highlight-color:transparent;
-}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border-radius:8px;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;border:none;transition:opacity .15s,transform .1s;-webkit-tap-highlight-color:transparent;}
 .btn:active{transform:scale(.96);}
 .btn:disabled{opacity:.4;cursor:not-allowed;}
 .btn-primary{background:var(--accent);color:#0F1923;}
@@ -75,135 +47,109 @@ select option{background:var(--s2);}
 .btn-green{background:#064e3b;color:#6ee7b7;border:1px solid #065f46;}
 .btn-sm{padding:7px 13px;font-size:12px;border-radius:6px;}
 .btn-full{width:100%;}
-.btn-icon{width:40px;height:40px;padding:0;border-radius:50%;font-size:18px;}
 
 /* ── LOGIN ── */
 #s-login{align-items:center;justify-content:center;transform:translateX(0);}
-.login-card{
-  width:100%;max-width:340px;background:var(--s2);
-  border:1px solid var(--border);border-radius:16px;padding:36px 28px;margin:16px;
-}
+.login-card{width:100%;max-width:340px;background:var(--s2);border:1px solid var(--border);border-radius:16px;padding:36px 28px;margin:16px;}
 .login-brand{font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px;}
 .login-card h1{font-size:24px;font-weight:700;margin-bottom:4px;}
 .login-card p{font-size:13px;color:var(--t2);margin-bottom:28px;}
 
-/* ── MODULE CARDS ── */
-.mod-card{
-  background:var(--s2);border:1px solid var(--border);border-radius:var(--r);
-  padding:14px;margin-bottom:10px;cursor:pointer;
-  transition:border-color .15s,background .15s;-webkit-tap-highlight-color:transparent;
-  display:flex;align-items:center;gap:12px;
-}
+/* ── MODULE LIST CARDS ── */
+.mod-card{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;gap:12px;-webkit-tap-highlight-color:transparent;}
 .mod-card:active{background:var(--s3);border-color:var(--accent);}
 .mod-icon{font-size:28px;flex-shrink:0;}
 .mod-info{flex:1;min-width:0;}
 .mod-name{font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.mod-sub{font-size:12px;color:var(--t2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mod-sub{font-size:12px;color:var(--t2);margin-top:2px;}
 .mod-tags{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap;}
 .tag{font-size:10px;color:var(--t3);background:var(--s3);padding:2px 7px;border-radius:4px;}
 .badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;text-transform:uppercase;}
 .b-on{background:#0d2a3a;color:var(--accent);}
 .b-off{background:#1a2a1a;color:#4ade80;}
-.mod-arrow{color:var(--t3);font-size:20px;flex-shrink:0;}
 
 /* ── FAB ── */
-.fab-wrap{position:absolute;bottom:20px;right:16px;display:flex;flex-direction:column;align-items:flex-end;gap:10px;}
-.fab{
-  width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;font-size:22px;
-  box-shadow:0 4px 16px rgba(0,0,0,.4);transition:transform .15s;
-  -webkit-tap-highlight-color:transparent;
-}
-.fab:active{transform:scale(.9);}
-.fab-primary{background:var(--accent);color:#0F1923;}
-.fab-notes{background:var(--s3);color:var(--t2);font-size:18px;}
+.fab-wrap{position:absolute;bottom:18px;right:14px;display:flex;flex-direction:column;align-items:flex-end;gap:10px;}
+.fab{width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,.5);transition:transform .15s;-webkit-tap-highlight-color:transparent;}
+.fab:active{transform:scale(.88);}
+.fab-primary{background:var(--accent);color:#0F1923;font-size:24px;}
+.fab-sec{background:var(--s3);color:var(--t2);font-size:18px;}
 
 /* ── SEARCH ── */
 .search-wrap{padding:10px 12px;background:var(--s1);border-bottom:1px solid var(--border);}
 .search-wrap input{font-size:13px;padding:8px 12px;border-radius:20px;}
 
-/* ── MODULE META FORM ── */
-.meta-form{background:var(--s2);border-bottom:1px solid var(--border);padding:14px;}
-
 /* ── TABS ── */
 .tabs{display:flex;background:var(--s1);border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0;}
-.tab{
-  flex:1;padding:12px 8px;font-size:13px;font-weight:600;color:var(--t2);
-  cursor:pointer;border:none;background:none;border-bottom:3px solid transparent;
-  margin-bottom:-1px;transition:color .15s,border-color .15s;font-family:var(--font);
-  white-space:nowrap;-webkit-tap-highlight-color:transparent;
-}
+.tab{flex:1;padding:11px 8px;font-size:13px;font-weight:600;color:var(--t2);cursor:pointer;border:none;background:none;border-bottom:3px solid transparent;margin-bottom:-1px;transition:color .15s,border-color .15s;font-family:var(--font);white-space:nowrap;-webkit-tap-highlight-color:transparent;}
 .tab.on{color:var(--accent);border-bottom-color:var(--accent);}
 
-/* ── CONTENT CARDS ── */
-.content-list{padding:12px;}
-.item-card{
-  background:var(--s2);border:1px solid var(--border);border-radius:var(--r);
-  margin-bottom:10px;overflow:hidden;
-}
+/* ── ITEM CARDS ── */
+.content-list{padding:10px;}
+.item-card{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden;}
 .item-card-body{padding:12px 14px;}
 .item-num{font-size:10px;color:var(--t3);margin-bottom:3px;}
 .item-title{font-size:14px;font-weight:600;line-height:1.3;}
-.item-type{font-size:11px;color:var(--t3);margin-top:3px;}
-.item-preview{font-size:12px;color:var(--t2);margin-top:6px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.item-preview{font-size:12px;color:var(--t2);margin-top:5px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;}
 .item-actions{display:flex;border-top:1px solid var(--border);}
-.item-action{
-  flex:1;padding:10px;font-size:12px;font-weight:600;border:none;background:none;
-  cursor:pointer;font-family:var(--font);-webkit-tap-highlight-color:transparent;
-  transition:background .1s;
-}
+.item-action{flex:1;padding:10px;font-size:12px;font-weight:600;border:none;background:none;cursor:pointer;font-family:var(--font);-webkit-tap-highlight-color:transparent;}
 .item-action:active{background:var(--s3);}
 .item-action+.item-action{border-left:1px solid var(--border);}
 .ia-edit{color:var(--accent);}
 .ia-del{color:var(--red);}
 
-/* ── EDITOR SCREEN ── */
-.editor-topbar{
-  display:flex;align-items:center;gap:10px;padding:12px 16px;
-  background:var(--s1);border-bottom:1px solid var(--border);flex-shrink:0;
-}
-
-/* ── IMAGE UPLOAD ── */
-.upload-btn{
-  display:flex;align-items:center;gap:8px;padding:14px;
-  background:var(--s1);border:2px dashed var(--border);border-radius:8px;
-  cursor:pointer;font-size:13px;color:var(--t2);transition:border-color .15s;
-}
-.upload-btn:active{border-color:var(--accent);}
-.img-prev{width:100%;max-height:200px;object-fit:contain;border-radius:8px;display:block;margin-bottom:8px;}
+/* ── UPLOAD ── */
+.upload-lbl{display:flex;align-items:center;gap:8px;padding:14px;background:var(--s1);border:2px dashed var(--border);border-radius:8px;cursor:pointer;font-size:13px;color:var(--t2);transition:border-color .15s;}
+.upload-lbl:active{border-color:var(--accent);}
+.img-prev{width:100%;max-height:180px;object-fit:contain;border-radius:8px;display:block;margin-bottom:8px;}
 
 /* ── ZONA EDITOR ── */
-#hs-wrap{position:relative;display:inline-block;}
-#hs-img{display:block;width:100%;border-radius:8px;}
-.hs-dot{
-  position:absolute;width:28px;height:28px;border-radius:50%;
-  background:var(--accent);border:3px solid #0F1923;
-  transform:translate(-50%,-50%);cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  font-size:10px;font-weight:700;color:#0F1923;z-index:2;
-}
-.hs-dot.sel{background:var(--warn);}
+#zona-container{position:relative;width:100%;touch-action:none;}
+#zona-img{display:block;width:100%;border-radius:8px;pointer-events:none;}
+#zona-overlay{position:absolute;inset:0;border-radius:8px;}
+.zona-rect{position:absolute;border:2.5px solid var(--accent);background:rgba(45,212,191,.15);cursor:pointer;transition:background .15s;}
+.zona-rect.sel{border-color:var(--warn);background:rgba(245,158,11,.22);}
+.zona-rect.preview-rect{border:2px dashed var(--accent);background:rgba(45,212,191,.1);pointer-events:none;}
+.zona-num{position:absolute;top:4px;left:4px;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#0F1923;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.zona-num.sel{background:var(--warn);}
+.draw-mode-banner{background:var(--accent);color:#0F1923;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:700;text-align:center;margin-bottom:10px;}
 
-/* ── OBSERVATIONS PANEL ── */
-#obs-overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:800;
-  display:none;align-items:flex-end;
-}
-#obs-overlay.on{display:flex;}
-.obs-panel{
-  width:100%;background:var(--s2);border-radius:20px 20px 0 0;
-  padding:20px;max-height:75vh;display:flex;flex-direction:column;gap:12px;
-}
-.obs-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 4px;}
-.obs-title{font-size:16px;font-weight:700;}
-.obs-sub{font-size:12px;color:var(--t2);}
-#obs-text{min-height:140px;font-size:14px;}
+/* ── PREVIEW SCREEN ── */
+.preview-slide{padding:20px;min-height:100%;}
+.preview-notice{background:var(--s3);border-left:4px solid var(--warn);border-radius:8px;padding:14px;}
+.preview-cards-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px;}
+.preview-card{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;}
+.preview-card-icon{font-size:28px;margin-bottom:6px;}
+.preview-card-label{font-size:12px;font-weight:600;margin-bottom:4px;}
+.preview-card-desc{font-size:11px;color:var(--t2);}
+.preview-step{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border);}
+.preview-step-num{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#0F1923;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.preview-check{display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);}
+.preview-check-box{width:20px;height:20px;border-radius:4px;border:2px solid var(--accent);flex-shrink:0;}
+.preview-img-full{width:100%;border-radius:8px;margin-bottom:10px;}
+.preview-nav{display:flex;align-items:center;justify-content:space-between;padding:14px;background:var(--s1);border-top:1px solid var(--border);flex-shrink:0;}
+.preview-counter{font-size:13px;color:var(--t2);}
+
+/* ── LIBRARY ── */
+.lib-card{background:var(--s2);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:10px;display:flex;gap:12px;padding:12px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.lib-card:active{background:var(--s3);}
+.lib-thumb{width:72px;height:56px;object-fit:cover;border-radius:6px;flex-shrink:0;background:var(--s3);}
+.lib-info{flex:1;min-width:0;}
+.lib-name{font-size:13px;font-weight:600;}
+.lib-meta{font-size:11px;color:var(--t2);margin-top:3px;}
+
+/* ── OVERLAYS ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:800;display:none;align-items:flex-end;}
+.overlay.on{display:flex;}
+.bottom-panel{width:100%;background:var(--s2);border-radius:20px 20px 0 0;padding:20px;max-height:90vh;display:flex;flex-direction:column;gap:12px;overflow-y:auto;}
+.panel-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 4px;}
+.panel-title{font-size:17px;font-weight:700;}
 
 /* ── MODAL ── */
-#modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:900;display:none;align-items:center;justify-content:center;padding:16px;}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:900;display:none;align-items:center;justify-content:center;padding:16px;}
 #modal.on{display:flex;}
 .modal-box{width:100%;max-width:360px;background:var(--s2);border:1px solid var(--border);border-radius:16px;padding:24px;}
-.modal-box h3{font-size:16px;font-weight:700;margin-bottom:10px;}
+.modal-box h3{font-size:16px;font-weight:700;margin-bottom:8px;}
 .modal-box p{font-size:13px;color:var(--t2);margin-bottom:18px;}
 .modal-acts{display:flex;gap:8px;}
 .modal-acts .btn{flex:1;}
@@ -211,75 +157,63 @@ select option{background:var(--s2);}
 /* ── EMPTY ── */
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:50px 20px;gap:10px;color:var(--t3);}
 .empty-icon{font-size:44px;opacity:.3;}
-.empty-label{font-size:14px;text-align:center;}
 
 /* ── TOAST ── */
-#toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(10px);padding:10px 18px;border-radius:99px;font-size:13px;font-weight:600;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:999;white-space:nowrap;}
+#toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(10px);padding:10px 20px;border-radius:99px;font-size:13px;font-weight:600;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:999;white-space:nowrap;}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .t-ok{background:#065f46;color:#6ee7b7;}
 .t-err{background:#7f1d1d;color:#fca5a5;}
 .t-info{background:#1e3a5f;color:#93c5fd;}
 
-::-webkit-scrollbar{width:4px;}
-::-webkit-scrollbar-track{background:transparent;}
+.screen-body{flex:1;overflow-y:auto;padding:14px;}
+hr{border:none;border-top:1px solid var(--border);margin:12px 0;}
+::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 </style>
 </head>
 <body>
 <div id="root">
 
-<!-- ══ LOGIN ══ -->
+<!-- LOGIN -->
 <div class="screen active" id="s-login">
   <div class="login-card">
     <div class="login-brand">AppTus</div>
     <h1>Builder</h1>
     <p>Creación de módulos de capacitación</p>
-    <div class="field"><label>Clave de acceso</label>
-      <input type="password" id="login-pw" placeholder="••••••••">
-    </div>
+    <div class="field"><label>Clave de acceso</label><input type="password" id="login-pw" placeholder="••••••••"></div>
     <div id="login-err" style="color:var(--red);font-size:12px;margin-bottom:10px;display:none">Clave incorrecta.</div>
     <button class="btn btn-primary btn-full" onclick="doLogin()">Entrar →</button>
   </div>
 </div>
 
-<!-- ══ LIST ══ -->
+<!-- LIST -->
 <div class="screen" id="s-list">
   <div class="topbar">
-    <div>
-      <div class="topbar-title">AppTus Builder</div>
-      <div class="topbar-sub">Módulos de capacitación</div>
-    </div>
-    <button class="btn-icon btn btn-ghost" onclick="doLogout()" title="Salir" style="font-size:16px">↩</button>
+    <div style="flex:1"><div class="topbar-title">AppTus Builder</div><div style="font-size:11px;color:var(--t3)">Módulos de capacitación</div></div>
+    <button class="btn btn-ghost btn-sm" onclick="goTo('s-library')" style="font-size:12px">📚 Biblioteca</button>
+    <button class="back-btn" onclick="doLogout()" style="font-size:16px">↩</button>
   </div>
-  <div class="search-wrap">
-    <input type="text" id="search" placeholder="🔍  Buscar módulos…" oninput="filterList()">
-  </div>
+  <div class="search-wrap"><input type="text" id="search" placeholder="🔍  Buscar módulos…" oninput="filterList()"></div>
   <div class="screen-body" id="mod-list" style="padding-bottom:80px">
-    <div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-label">Cargando…</div></div>
+    <div class="empty-state"><div class="empty-icon">⏳</div><div style="font-size:13px">Cargando…</div></div>
   </div>
-  <div class="fab-wrap">
-    <button class="fab fab-primary" onclick="newMod()" title="Nuevo módulo">＋</button>
-  </div>
+  <div class="fab-wrap"><button class="fab fab-primary" onclick="goTo('s-new')">＋</button></div>
 </div>
 
-<!-- ══ MODULE ══ -->
+<!-- MODULE -->
 <div class="screen" id="s-module">
-  <div class="topbar" id="mod-topbar">
+  <div class="topbar">
     <button class="back-btn" onclick="goBack('s-list')">←</button>
-    <div style="flex:1;min-width:0">
-      <div class="topbar-title" id="mod-topbar-title">Módulo</div>
-    </div>
-    <button class="btn btn-ghost btn-sm" onclick="saveMod(false)">Borrador</button>
-    <button class="btn btn-green btn-sm" onclick="saveMod(true)">✓ Publicar</button>
+    <div id="mod-topbar-title" class="topbar-title">Módulo</div>
+    <button class="btn btn-ghost btn-sm" onclick="openPreview()" style="font-size:13px">👁</button>
+    <button class="btn btn-ghost btn-sm" onclick="saveMod(false)" style="font-size:12px">Borrador</button>
+    <button class="btn btn-green btn-sm" onclick="saveMod(true)">✓ Pub.</button>
   </div>
-
-  <div class="screen-body-notop" style="overflow-y:auto;display:flex;flex-direction:column;">
-
-    <!-- META FORM -->
-    <div class="meta-form">
+  <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+    <div style="background:var(--s2);border-bottom:1px solid var(--border);padding:12px;">
       <div class="row2">
         <div class="field"><label>Nombre</label><input type="text" id="f-nombre" placeholder="Nombre del módulo" oninput="document.getElementById('mod-topbar-title').textContent=this.value||'Módulo'"></div>
-        <div class="field" style="flex:0 0 70px"><label>Ícono</label><input type="text" id="f-icono" placeholder="📋" style="text-align:center;font-size:20px"></div>
+        <div class="field" style="flex:0 0 64px"><label>Ícono</label><input type="text" id="f-icono" placeholder="📋" style="text-align:center;font-size:20px"></div>
       </div>
       <div class="row2">
         <div class="field"><label>Subtítulo / Equipo</label><input type="text" id="f-sub" placeholder="ej: Desfibrilador"></div>
@@ -293,94 +227,92 @@ select option{background:var(--s2);}
         </div>
       </div>
     </div>
-
-    <!-- TABS -->
     <div class="tabs">
       <button class="tab on" data-t="slides" onclick="switchTab('slides')">Slides</button>
       <button class="tab" data-t="zonas" onclick="switchTab('zonas')">Zonas</button>
       <button class="tab" data-t="quiz" onclick="switchTab('quiz')">Quiz</button>
     </div>
-
     <!-- SLIDES TAB -->
     <div id="tab-slides" style="flex:1;position:relative;padding-bottom:80px">
+      <div style="display:flex;gap:8px;padding:10px 10px 0">
+        <button class="btn btn-ghost btn-sm" onclick="openPaste()" style="flex:1">📋 Pegar texto</button>
+        <button class="btn btn-ghost btn-sm" onclick="openBiblioteca()" style="flex:1">📚 De biblioteca</button>
+      </div>
       <div class="content-list" id="slides-list"></div>
       <div class="fab-wrap">
-        <button class="fab fab-notes" onclick="openObs()" title="Observaciones">💬</button>
+        <button class="fab fab-sec" onclick="openObs()">💬</button>
         <button class="fab fab-primary" onclick="addSlide()">＋</button>
       </div>
     </div>
-
     <!-- ZONAS TAB -->
     <div id="tab-zonas" style="display:none;flex:1;position:relative;padding-bottom:80px">
-      <div style="padding:14px">
-        <label class="upload-btn" style="margin-bottom:14px">
-          📁 Subir imagen base del equipo
-          <input type="file" id="zona-file" accept="image/*" style="display:none" onchange="uploadZonaBase(event)">
-        </label>
-        <div id="hs-wrap" style="display:none;margin-bottom:12px">
-          <img id="hs-img" src="" alt="" onclick="imgClick(event)" style="cursor:crosshair">
+      <div style="padding:12px">
+        <div id="zona-draw-banner" class="draw-mode-banner" style="display:none">✏ Arrastrá el dedo en la imagen para marcar una zona</div>
+        <div id="zona-noimg" style="color:var(--t3);font-size:13px;text-align:center;padding:30px 0;display:none">Subí una imagen del equipo para marcar zonas interactivas</div>
+        <div id="zona-container" style="display:none">
+          <img id="zona-img" src="" alt="">
+          <div id="zona-overlay"></div>
         </div>
-        <div id="zona-noimg" style="color:var(--t3);font-size:13px;text-align:center;padding:30px 0">Subí una imagen para agregar hotspots interactivos</div>
-        <div id="hs-cards"></div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <label class="btn btn-ghost btn-sm" style="cursor:pointer;flex:1">
+            📁 Subir imagen base
+            <input type="file" id="zona-file" accept="image/*" style="display:none" onchange="uploadZonaBase(event)">
+          </label>
+          <button class="btn btn-ghost btn-sm" onclick="openBibliotecaParaZona()" style="flex:1">📚 Desde biblioteca</button>
+          <button class="btn btn-primary btn-sm" id="btn-draw" onclick="startDraw()" style="flex:1">+ Marcar zona</button>
+        </div>
+        <div class="content-list" style="padding:10px 0" id="zona-cards"></div>
       </div>
-      <div class="fab-wrap">
-        <button class="fab fab-notes" onclick="openObs()">💬</button>
-        <button class="fab fab-primary" onclick="startAddHs()">＋</button>
-      </div>
+      <div class="fab-wrap"><button class="fab fab-sec" onclick="openObs()">💬</button></div>
     </div>
-
     <!-- QUIZ TAB -->
     <div id="tab-quiz" style="display:none;flex:1;position:relative;padding-bottom:80px">
       <div class="content-list" id="quiz-list"></div>
       <div class="fab-wrap">
-        <button class="fab fab-notes" onclick="openObs()">💬</button>
+        <button class="fab fab-sec" onclick="openObs()">💬</button>
         <button class="fab fab-primary" onclick="addQ()">＋</button>
       </div>
     </div>
-
   </div>
 </div>
 
-<!-- ══ SLIDE EDITOR ══ -->
+<!-- SLIDE EDITOR -->
 <div class="screen" id="s-slide">
   <div class="topbar">
-    <button class="back-btn" onclick="saveSlideAndBack()">←</button>
+    <button class="back-btn" onclick="saveSlideBack()">←</button>
     <div class="topbar-title" id="slide-topbar-title">Slide</div>
-    <button class="btn btn-primary btn-sm" onclick="saveSlideAndBack()">Guardar</button>
+    <button class="btn btn-primary btn-sm" onclick="saveSlideBack()">Guardar</button>
   </div>
-  <div class="screen-body" id="slide-editor-body"></div>
+  <div class="screen-body" id="slide-body"></div>
 </div>
 
-<!-- ══ QUIZ EDITOR ══ -->
+<!-- QUIZ EDITOR -->
 <div class="screen" id="s-quiz">
   <div class="topbar">
-    <button class="back-btn" onclick="saveQAndBack()">←</button>
+    <button class="back-btn" onclick="saveQBack()">←</button>
     <div class="topbar-title" id="quiz-topbar-title">Pregunta</div>
-    <button class="btn btn-primary btn-sm" onclick="saveQAndBack()">Guardar</button>
+    <button class="btn btn-primary btn-sm" onclick="saveQBack()">Guardar</button>
   </div>
-  <div class="screen-body" id="quiz-editor-body"></div>
+  <div class="screen-body" id="quiz-body"></div>
 </div>
 
-<!-- ══ HOTSPOT EDITOR ══ -->
-<div class="screen" id="s-hs">
+<!-- ZONA EDITOR -->
+<div class="screen" id="s-zona">
   <div class="topbar">
-    <button class="back-btn" onclick="saveHsAndBack()">←</button>
-    <div class="topbar-title">Editar hotspot</div>
-    <button class="btn btn-primary btn-sm" onclick="saveHsAndBack()">Guardar</button>
+    <button class="back-btn" onclick="saveZonaBack()">←</button>
+    <div class="topbar-title">Editar zona</div>
+    <button class="btn btn-primary btn-sm" onclick="saveZonaBack()">Guardar</button>
   </div>
   <div class="screen-body">
-    <div class="field"><label>Nombre del área</label><input type="text" id="hs-nombre" placeholder="ej: Pantalla principal"></div>
-    <div class="field"><label>Descripción / Información</label><textarea id="hs-desc" style="min-height:120px" placeholder="Información que aparece al tocar este punto…"></textarea></div>
-    <button class="btn btn-red btn-full" onclick="deleteHsAndBack()">🗑 Eliminar hotspot</button>
+    <div class="field"><label>Nombre de la zona</label><input type="text" id="zona-nombre" placeholder="ej: Panel de control"></div>
+    <div class="field"><label>Descripción / Información</label><textarea id="zona-desc" style="min-height:130px" placeholder="Información que aparece al tocar esta zona…"></textarea></div>
+    <button class="btn btn-red btn-full" style="margin-top:6px" onclick="deleteZonaBack()">🗑 Eliminar esta zona</button>
   </div>
 </div>
 
-<!-- ══ NEW MODULE ══ -->
+<!-- NEW MODULE -->
 <div class="screen" id="s-new">
-  <div class="topbar">
-    <button class="back-btn" onclick="goBack('s-list')">←</button>
-    <div class="topbar-title">Nuevo módulo</div>
-  </div>
+  <div class="topbar"><button class="back-btn" onclick="goBack('s-list')">←</button><div class="topbar-title">Nuevo módulo</div></div>
   <div class="screen-body">
     <div class="field"><label>Nombre del módulo</label><input type="text" id="new-nombre" placeholder="ej: Monitor Mindray MEC-1200"></div>
     <div class="field"><label>Subtítulo / Tipo de equipo</label><input type="text" id="new-sub" placeholder="ej: Monitor multiparamétrico"></div>
@@ -399,20 +331,81 @@ select option{background:var(--s2);}
   </div>
 </div>
 
+<!-- PREVIEW -->
+<div class="screen" id="s-preview">
+  <div class="topbar">
+    <button class="back-btn" onclick="goBack('s-module')">←</button>
+    <div class="topbar-title" id="prev-title">Vista previa</div>
+    <div id="prev-counter" style="font-size:12px;color:var(--t2)"></div>
+  </div>
+  <div style="flex:1;overflow-y:auto" id="prev-slide-area"></div>
+  <div class="preview-nav">
+    <button class="btn btn-ghost btn-sm" onclick="prevSlide()" id="btn-prev">← Anterior</button>
+    <div class="preview-counter" id="prev-num"></div>
+    <button class="btn btn-ghost btn-sm" onclick="nextSlide()" id="btn-next">Siguiente →</button>
+  </div>
+</div>
+
+<!-- LIBRARY -->
+<div class="screen" id="s-library">
+  <div class="topbar"><button class="back-btn" onclick="goBack('s-list')">←</button><div class="topbar-title">📚 Biblioteca de imágenes</div></div>
+  <div class="screen-body" style="padding-bottom:80px" id="lib-list">
+    <div class="empty-state"><div class="empty-icon">📚</div><div style="font-size:13px">Sin imágenes guardadas todavía.<br>Al guardar un módulo con zonas, se agregan aquí.</div></div>
+  </div>
+  <div class="fab-wrap"><label class="fab fab-primary" style="cursor:pointer" title="Subir imagen a la biblioteca">＋<input type="file" accept="image/*" style="display:none" onchange="addToLibrary(event)"></label></div>
+</div>
+
 </div><!-- /root -->
 
-<!-- OBSERVATIONS PANEL -->
-<div id="obs-overlay" onclick="closeObsIfBg(event)">
-  <div class="obs-panel">
-    <div class="obs-handle"></div>
-    <div class="obs-title">💬 Observaciones</div>
-    <div class="obs-sub" id="obs-sub">Escribí notas sobre este módulo para revisión futura</div>
-    <textarea id="obs-text" placeholder="ej: El slide 3 necesita más detalle sobre el procedimiento. Agregar imagen del panel trasero…"></textarea>
+<!-- OBSERVATIONS -->
+<div class="overlay" id="obs-overlay" onclick="closeOverlayBg(event,'obs-overlay')">
+  <div class="bottom-panel">
+    <div class="panel-handle"></div>
+    <div class="panel-title">💬 Observaciones</div>
+    <div id="obs-sub" style="font-size:12px;color:var(--t2)"></div>
+    <textarea id="obs-text" style="min-height:130px" placeholder="ej: El slide 3 necesita imagen del panel trasero…"></textarea>
     <div style="display:flex;gap:8px">
       <button class="btn btn-ghost btn-sm" style="flex:1" onclick="copyObs()">📋 Copiar</button>
-      <button class="btn btn-primary btn-sm" style="flex:1" onclick="saveObs()">Guardar notas</button>
-      <button class="btn btn-ghost btn-sm" onclick="closeObs()">✕</button>
+      <button class="btn btn-primary btn-sm" style="flex:1" onclick="saveObs()">Guardar</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('obs-overlay').classList.remove('on')">✕</button>
     </div>
+  </div>
+</div>
+
+<!-- PASTE TEXT -->
+<div class="overlay" id="paste-overlay" onclick="closeOverlayBg(event,'paste-overlay')">
+  <div class="bottom-panel">
+    <div class="panel-handle"></div>
+    <div class="panel-title">📋 Pegar texto</div>
+    <div style="font-size:12px;color:var(--t2)">Pegá el contenido del equipo. El Builder va a detectar títulos, listas, pasos y avisos automáticamente.</div>
+    <textarea id="paste-text" style="min-height:180px;font-size:13px" placeholder="Pegá acá el texto del manual, protocolo o tus notas…&#10;&#10;El sistema detecta automáticamente:&#10;• Listas con guiones o viñetas → Lista de verificación&#10;1. Pasos numerados → Pasos&#10;IMPORTANTE: ... → Aviso destacado&#10;Título sin punto → Slide de texto"></textarea>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('paste-overlay').classList.remove('on')" style="flex:0 0 auto">Cancelar</button>
+      <button class="btn btn-primary btn-sm btn-full" onclick="parsePaste()">✦ Convertir en slides</button>
+    </div>
+  </div>
+</div>
+
+<!-- INTERACTIVE? -->
+<div class="overlay" id="interactive-overlay">
+  <div class="bottom-panel">
+    <div class="panel-handle"></div>
+    <div class="panel-title">¿Esta imagen tiene zonas clicleables?</div>
+    <div style="font-size:13px;color:var(--t2)">¿Querés marcar partes del equipo en esta imagen?</div>
+    <img id="interactive-preview" src="" style="width:100%;max-height:160px;object-fit:contain;border-radius:8px;border:1px solid var(--border)">
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost btn-sm btn-full" onclick="skipInteractive()">No, solo imagen</button>
+      <button class="btn btn-primary btn-sm btn-full" onclick="useAsZona()">Sí, marcar zonas →</button>
+    </div>
+  </div>
+</div>
+
+<!-- BIBLIOTECA (insertar zona) -->
+<div class="overlay" id="bib-overlay" onclick="closeOverlayBg(event,'bib-overlay')">
+  <div class="bottom-panel">
+    <div class="panel-handle"></div>
+    <div class="panel-title">📚 Insertar desde biblioteca</div>
+    <div id="bib-overlay-list" style="overflow-y:auto;max-height:50vh"></div>
   </div>
 </div>
 
@@ -427,7 +420,6 @@ select option{background:var(--s2);}
     </div>
   </div>
 </div>
-
 <div id="toast"></div>
 
 <script>
@@ -440,10 +432,15 @@ const PASS='SEM2026super';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
 
 // ── STATE ──
-let mods=[],cur=null,slideIdx=null,qIdx=null,hsIdx=null,addingHs=false;
+let mods=[],cur=null,slideIdx=null,qIdx=null,zonaIdx=null;
 let screenStack=['s-login'];
+let prevIdx=0;
+// Zona drawing
+let drawMode=false,drawStart=null,drawCurrent=null;
+// Pending interactive image
+let pendingImg={url:'',slideIdx:null};
 
-// ── SCREEN NAVIGATION ──
+// ── NAV ──
 function goTo(id){
   const prev=screenStack[screenStack.length-1];
   if(prev===id)return;
@@ -454,7 +451,6 @@ function goTo(id){
 function goBack(to){
   const cur=screenStack[screenStack.length-1];
   document.getElementById(cur)?.classList.remove('active');
-  // find 'to' in stack
   const idx=screenStack.lastIndexOf(to);
   if(idx>=0){
     screenStack=screenStack.slice(0,idx+1);
@@ -469,169 +465,104 @@ function goBack(to){
 document.getElementById('login-pw').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 function doLogin(){
   if(document.getElementById('login-pw').value===PASS){
-    goBack('s-login'); goTo('s-list'); loadMods();
-  } else {
-    document.getElementById('login-err').style.display='block';
-  }
+    goBack('s-login');goTo('s-list');loadMods();renderLibrary();
+  }else{document.getElementById('login-err').style.display='block';}
 }
-function doLogout(){
-  goBack('s-login'); cur=null; mods=[];
-  document.getElementById('login-pw').value='';
-}
+function doLogout(){goBack('s-login');cur=null;mods=[];document.getElementById('login-pw').value='';}
 
-// ── PARSE ──
+// ── PARSE helpers ──
 function parseMods(raw){
-  if(!raw||!Array.isArray(raw))return[];
-  if(!raw.length)return[];
-  if(raw[0]?.slides){
-    const flat=[];
-    raw.forEach(s=>{if(Array.isArray(s.slides))s.slides.forEach(sl=>flat.push(sl));});
-    return flat;
-  }
+  if(!raw||!Array.isArray(raw)||!raw.length)return[];
+  if(raw[0]?.slides){const f=[];raw.forEach(s=>{(s.slides||[]).forEach(sl=>f.push(sl));});return f;}
   return raw;
 }
 function parseQuiz(raw){
   if(!raw||!Array.isArray(raw))return[];
-  return raw.map(q=>({
-    id:q.id||uid(),pregunta:q.pregunta||q.q||'',
-    opciones:q.opciones||q.ops||['','','',''],
-    correcta:typeof q.correcta==='number'?q.correcta:(q.ans??0),
-    explicacion:q.explicacion||q.exp||''
-  }));
+  return raw.map(q=>({id:q.id||uid(),pregunta:q.pregunta||q.q||'',opciones:q.opciones||q.ops||['','','',''],correcta:typeof q.correcta==='number'?q.correcta:(q.ans??0),explicacion:q.explicacion||q.exp||''}));
 }
 function parseZonas(raw){
   if(raw&&typeof raw==='object'&&!Array.isArray(raw))return raw;
   return{imagen_base:'',hotspots:[]};
 }
 
-// ── LOAD MODULES ──
+// ── LOAD ──
 async function loadMods(){
   const el=document.getElementById('mod-list');
-  el.innerHTML=`<div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-label">Cargando…</div></div>`;
+  el.innerHTML=`<div class="empty-state"><div class="empty-icon">⏳</div><div style="font-size:13px">Cargando…</div></div>`;
   const{data,error}=await sb.from('at_modulos').select('id,nombre,sub,categoria,icono,activo,updated_at').order('updated_at',{ascending:false});
   if(error){
-    el.innerHTML=`<div style="padding:16px"><div style="color:var(--red);font-size:13px;margin-bottom:12px">⚠ ${esc(error.message)}</div><button class="btn btn-ghost btn-full" onclick="loadMods()">↺ Reintentar</button></div>`;
+    el.innerHTML=`<div style="padding:14px"><div style="color:var(--red);font-size:12px;margin-bottom:10px">⚠ ${esc(error.message)}</div><button class="btn btn-ghost btn-full" onclick="loadMods()">↺ Reintentar</button></div>`;
     return;
   }
-  mods=data||[]; renderList();
+  mods=data||[];renderList();
 }
-
 function renderList(q=''){
-  const lc=q.toLowerCase();
-  const f=mods.filter(m=>(m.nombre||'').toLowerCase().includes(lc)||(m.sub||'').toLowerCase().includes(lc));
+  const f=mods.filter(m=>(m.nombre||'').toLowerCase().includes(q.toLowerCase())||(m.sub||'').toLowerCase().includes(q.toLowerCase()));
   const el=document.getElementById('mod-list');
-  if(!f.length){
-    el.innerHTML=`<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-label">${q?'Sin resultados':'Sin módulos todavía'}</div></div>`;
-    return;
-  }
+  if(!f.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">📭</div><div style="font-size:13px">${q?'Sin resultados':'Sin módulos todavía'}</div></div>`;return;}
   el.innerHTML=f.map(m=>`
     <div class="mod-card" onclick="selectMod('${m.id}')">
       <div class="mod-icon">${m.icono||'📋'}</div>
       <div class="mod-info">
         <div class="mod-name">${esc(m.nombre||'Sin nombre')}</div>
         ${m.sub?`<div class="mod-sub">${esc(m.sub)}</div>`:''}
-        <div class="mod-tags">
-          ${m.categoria?`<span class="tag">${esc(m.categoria)}</span>`:''}
-          <span class="badge ${m.activo?'b-on':'b-off'}">${m.activo?'activo':'borrador'}</span>
-        </div>
+        <div class="mod-tags">${m.categoria?`<span class="tag">${esc(m.categoria)}</span>`:''}<span class="badge ${m.activo?'b-on':'b-off'}">${m.activo?'activo':'borrador'}</span></div>
       </div>
-      <div class="mod-arrow">›</div>
+      <div style="color:var(--t3);font-size:20px">›</div>
     </div>`).join('');
 }
 function filterList(){renderList(document.getElementById('search').value);}
 
-// ── SELECT MODULE ──
 async function selectMod(id){
   toast('Abriendo…','info');
   const{data,error}=await sb.from('at_modulos').select('*').eq('id',id).single();
   if(error){toast('Error: '+error.message,'err');return;}
-  cur={
-    data,slides:parseMods(data.mods),
-    quiz:parseQuiz(data.quiz),
-    zonas:parseZonas(data.zonas)
-  };
-  slideIdx=null;qIdx=null;hsIdx=null;
-  openModuleScreen();
+  cur={data,slides:parseMods(data.mods),quiz:parseQuiz(data.quiz),zonas:parseZonas(data.zonas)};
+  slideIdx=null;qIdx=null;zonaIdx=null;
+  openModScreen();
 }
-
-function newMod(){goTo('s-new');}
-
 async function createMod(){
   const nombre=document.getElementById('new-nombre').value.trim();
   if(!nombre){toast('Escribí un nombre','err');return;}
-  const payload={
-    nombre,sub:document.getElementById('new-sub').value.trim(),
-    categoria:document.getElementById('new-cat').value,
-    icono:document.getElementById('new-icono').value.trim()||'📋',
-    activo:false,mods:[],quiz:[],zonas:{imagen_base:'',hotspots:[]},
-    created_at:new Date().toISOString(),updated_at:new Date().toISOString()
-  };
-  const{data,error}=await sb.from('at_modulos').insert(payload).select().single();
+  const p={nombre,sub:document.getElementById('new-sub').value.trim(),categoria:document.getElementById('new-cat').value,icono:document.getElementById('new-icono').value.trim()||'📋',activo:false,mods:[],quiz:[],zonas:{imagen_base:'',hotspots:[]},created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+  const{data,error}=await sb.from('at_modulos').insert(p).select().single();
   if(error){toast('Error: '+error.message,'err');return;}
   cur={data,slides:[],quiz:[],zonas:{imagen_base:'',hotspots:[]}};
-  mods.unshift(data); renderList();
-  openModuleScreen();
-  goBack('s-list'); goTo('s-module');
+  mods.unshift(data);renderList();
+  goBack('s-list');openModScreen();
 }
 
-function openModuleScreen(){
+function openModScreen(){
   const d=cur.data;
   document.getElementById('f-nombre').value=d.nombre||'';
   document.getElementById('f-sub').value=d.sub||'';
   document.getElementById('f-cat').value=d.categoria||'equipos';
   document.getElementById('f-icono').value=d.icono||'📋';
   document.getElementById('mod-topbar-title').textContent=d.nombre||'Módulo';
-  renderSlideCards(); renderZonaTab(); renderQuizCards();
   switchTab('slides');
+  renderSlideCards();renderZonaTab();renderQuizCards();
   goTo('s-module');
 }
 
-// ── SAVE MODULE ──
+// ── SAVE ──
 async function saveMod(activo){
   const nombre=document.getElementById('f-nombre').value.trim();
   if(!nombre){toast('El módulo necesita un nombre','err');return;}
-  const payload={
-    nombre,sub:document.getElementById('f-sub').value.trim(),
-    categoria:document.getElementById('f-cat').value,
-    icono:document.getElementById('f-icono').value.trim()||'📋',
-    activo,mods:buildModsPayload(),quiz:buildQuizPayload(),
-    zonas:cur.zonas,updated_at:new Date().toISOString()
-  };
+  const p={nombre,sub:document.getElementById('f-sub').value.trim(),categoria:document.getElementById('f-cat').value,icono:document.getElementById('f-icono').value.trim()||'📋',activo,mods:buildModsPayload(),quiz:buildQuizPayload(),zonas:cur.zonas,updated_at:new Date().toISOString()};
   const{data,error}=cur.data.id
-    ? await sb.from('at_modulos').update(payload).eq('id',cur.data.id).select().single()
-    : await sb.from('at_modulos').insert({...payload,created_at:new Date().toISOString()}).select().single();
+    ?await sb.from('at_modulos').update(p).eq('id',cur.data.id).select().single()
+    :await sb.from('at_modulos').insert({...p,created_at:new Date().toISOString()}).select().single();
   if(error){toast('Error: '+error.message,'err');return;}
   cur.data=data;
   const idx=mods.findIndex(m=>m.id===data.id);
   if(idx>=0)mods[idx]={...mods[idx],...data};else mods.unshift(data);
-  renderList(document.getElementById('search').value);
-  document.getElementById('mod-topbar-title').textContent=data.nombre||'Módulo';
+  renderList();document.getElementById('mod-topbar-title').textContent=data.nombre;
+  // Auto-save zona to library
+  if(cur.zonas.imagen_base)saveZonaToLibrary(cur.zonas,data.nombre);
   toast(activo?'✓ Módulo publicado':'Borrador guardado','ok');
 }
-
-function buildModsPayload(){
-  if(!cur.slides.length)return[];
-  return[{id:0,title:document.getElementById('f-nombre').value.trim(),slides:cur.slides}];
-}
-function buildQuizPayload(){
-  return cur.quiz.map(q=>({q:q.pregunta,ops:q.opciones,ans:q.correcta,exp:q.explicacion||''}));
-}
-
-// ── DELETE MODULE ──
-function confirmDelMod(){
-  document.getElementById('modal-title').textContent='Eliminar módulo';
-  document.getElementById('modal-body').textContent=`¿Eliminás "${cur?.data?.nombre||'Sin nombre'}"? No se puede deshacer.`;
-  document.getElementById('modal-ok').onclick=async()=>{
-    closeModal();
-    if(!cur?.data?.id){goBack('s-list');return;}
-    const{error}=await sb.from('at_modulos').delete().eq('id',cur.data.id);
-    if(error){toast('Error: '+error.message,'err');return;}
-    mods=mods.filter(m=>m.id!==cur.data.id);
-    renderList(); cur=null; goBack('s-list');
-    toast('Módulo eliminado','info');
-  };
-  document.getElementById('modal').classList.add('on');
-}
+function buildModsPayload(){if(!cur.slides.length)return[];return[{id:0,title:document.getElementById('f-nombre').value.trim(),slides:cur.slides}];}
+function buildQuizPayload(){return cur.quiz.map(q=>({q:q.pregunta,ops:q.opciones,ans:q.correcta,exp:q.explicacion||''}));}
 
 // ── TABS ──
 function switchTab(t){
@@ -641,61 +572,43 @@ function switchTab(t){
   document.getElementById('tab-quiz').style.display=t==='quiz'?'block':'none';
 }
 
-// ══════════ SLIDES ══════════
-
-// Extract human-readable label for slide type
-function slideTypeLabel(t){
-  return{texto:'Texto',text:'Texto',imagen:'Imagen',image:'Imagen',notice:'Aviso',video:'Video',
-    cards:'Tarjetas',checklist:'Lista de verificación',steps:'Pasos',cols:'Columnas',table:'Tabla'}[t]||t||'Texto';
+// ── UPLOAD ──
+async function uploadFile(file,prefix){
+  const ext=file.name.split('.').pop().toLowerCase();
+  const name=`${prefix}${Date.now()}_${Math.random().toString(36).slice(2,7)}.${ext}`;
+  const res=await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${name}`,{method:'POST',headers:{'Authorization':`Bearer ${SB_KEY}`,'Content-Type':file.type},body:file});
+  if(!res.ok)throw new Error(await res.text());
+  return`${STORAGE}/${name}`;
 }
 
-// Extract preview content from any slide type
+// ══════════════════════════════════════════
+// SLIDES
+// ══════════════════════════════════════════
+function slideTypeLabel(t){return{texto:'Texto',text:'Texto',imagen:'Imagen',image:'Imagen',notice:'Aviso',video:'Video',cards:'Tarjetas',checklist:'Checklist',steps:'Pasos',cols:'Columnas'}[t]||t||'Texto';}
+
 function slidePreviewHTML(s){
   const lines=[];
-  // Text body
   const body=s.cuerpo||s.msg||s.desc||s.sub||'';
-  if(body) lines.push(`<div class="item-preview">${esc(body.slice(0,120))}</div>`);
-  // Image
+  if(body)lines.push(`<div class="item-preview">${esc(body.slice(0,100))}</div>`);
   const img=s.imagen_url||s.img||'';
-  if(img) lines.push(`<img src="${img}" style="width:100%;max-height:110px;object-fit:cover;border-radius:6px;margin-top:6px">`);
-  // Items array (cards, checklist)
+  if(img)lines.push(`<img src="${img}" style="width:100%;max-height:100px;object-fit:cover;border-radius:6px;margin-top:6px">`);
   const items=s.items||[];
-  if(items.length){
-    const shown=items.slice(0,4).map(it=>{
-      const icon=it.icon?`<span style="margin-right:4px">${it.icon}</span>`:'';
-      const lbl=esc(it.label||it.text||it.titulo||'');
-      return`<div style="display:flex;align-items:center;gap:4px;padding:3px 0;border-bottom:1px solid var(--border);font-size:12px;color:var(--t2)">${icon}${lbl}</div>`;
-    }).join('');
-    const more=items.length>4?`<div style="font-size:11px;color:var(--t3);padding-top:3px">+${items.length-4} más…</div>`:'';
-    lines.push(`<div style="margin-top:8px">${shown}${more}</div>`);
-  }
-  // Steps array
+  if(items.length){const shown=items.slice(0,3).map(it=>`<div style="font-size:11px;color:var(--t2);padding:2px 0;border-bottom:1px solid var(--border)">${it.icon?it.icon+' ':''}${esc(it.label||it.text||'')}</div>`).join('');lines.push(`<div style="margin-top:6px">${shown}${items.length>3?`<div style="font-size:10px;color:var(--t3)">+${items.length-3} más…</div>`:''}</div>`);}
   const steps=s.steps||[];
-  if(steps.length){
-    const shown=steps.slice(0,3).map((st,j)=>{
-      const txt=typeof st==='string'?st:(st.text||st.label||'');
-      return`<div style="display:flex;gap:6px;align-items:flex-start;padding:3px 0;font-size:12px;color:var(--t2)"><span style="color:var(--accent);font-weight:700;flex-shrink:0">${j+1}.</span><span>${esc(txt.slice(0,60))}</span></div>`;
-    }).join('');
-    const more=steps.length>3?`<div style="font-size:11px;color:var(--t3)">+${steps.length-3} más…</div>`:'';
-    lines.push(`<div style="margin-top:8px">${shown}${more}</div>`);
-  }
-  // Video URL
-  if(s.video_url||s.url) lines.push(`<div style="font-size:11px;color:var(--accent);margin-top:6px">▶ ${esc((s.video_url||s.url).slice(0,50))}</div>`);
-  return lines.join('')||'<div style="font-size:12px;color:var(--t3);margin-top:4px">Sin contenido todavía</div>';
+  if(steps.length){const shown=steps.slice(0,3).map((st,j)=>`<div style="font-size:11px;color:var(--t2);padding:2px 0"><span style="color:var(--accent);font-weight:700">${j+1}.</span> ${esc((typeof st==='string'?st:st.text||'').slice(0,50))}</div>`).join('');lines.push(`<div style="margin-top:6px">${shown}${steps.length>3?`<div style="font-size:10px;color:var(--t3)">+${steps.length-3} más…</div>`:''}</div>`);}
+  if(s.video_url||s.url)lines.push(`<div style="font-size:11px;color:var(--accent);margin-top:5px">▶ ${esc((s.video_url||s.url||'').slice(0,50))}</div>`);
+  return lines.join('')||'<div style="font-size:11px;color:var(--t3);margin-top:4px">Sin contenido</div>';
 }
 
 function renderSlideCards(){
   const el=document.getElementById('slides-list');
-  if(!cur.slides.length){
-    el.innerHTML=`<div class="empty-state"><div class="empty-icon">🖼</div><div class="empty-label">Sin slides todavía.<br>Tocá ＋ para agregar uno.</div></div>`;
-    return;
-  }
+  if(!cur.slides.length){el.innerHTML=`<div class="empty-state" style="padding:30px 0"><div class="empty-icon">🖼</div><div style="font-size:13px">Sin slides. Tocá ＋ o pegá texto.</div></div>`;return;}
   el.innerHTML=cur.slides.map((s,i)=>`
     <div class="item-card">
       <div class="item-card-body">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
           <div class="item-num">Slide ${i+1}</div>
-          <span style="font-size:10px;background:var(--s3);color:var(--accent);padding:2px 8px;border-radius:4px;font-weight:600">${slideTypeLabel(s.tipo||s.type)}</span>
+          <span style="font-size:10px;background:var(--s3);color:var(--accent);padding:2px 7px;border-radius:4px;font-weight:600">${slideTypeLabel(s.tipo||s.type)}</span>
         </div>
         <div class="item-title">${esc(s.titulo||s.title||'Sin título')}</div>
         ${slidePreviewHTML(s)}
@@ -711,145 +624,74 @@ function renderSlideCards(){
 
 function addSlide(){
   cur.slides.push({id:uid(),tipo:'texto',type:'texto',titulo:'',title:'',cuerpo:'',msg:'',imagen_url:'',video_url:'',items:[],steps:[]});
-  slideIdx=cur.slides.length-1;
-  editSlide(slideIdx);
+  slideIdx=cur.slides.length-1;editSlide(slideIdx);
 }
-function editSlide(i){
-  slideIdx=i;
-  document.getElementById('slide-topbar-title').textContent=`Slide ${i+1} — ${slideTypeLabel(cur.slides[i].tipo||cur.slides[i].type)}`;
-  renderSlideEditorBody(i);
-  goTo('s-slide');
-}
-function saveSlideAndBack(){
+function editSlide(i){slideIdx=i;document.getElementById('slide-topbar-title').textContent=`Slide ${i+1} · ${slideTypeLabel(cur.slides[i].tipo||cur.slides[i].type)}`;renderSlideBody(i);goTo('s-slide');}
+
+function saveSlideBack(){
   const s=cur.slides[slideIdx];
-  if(!s){goBack('s-module');return;}
-  s.titulo=s.title=document.getElementById('se-titulo')?.value??s.titulo??'';
-  s.tipo=s.type=document.getElementById('se-tipo')?.value??s.tipo??'texto';
-  s.cuerpo=s.msg=document.getElementById('se-cuerpo')?.value??s.cuerpo??'';
-  s.video_url=s.url=document.getElementById('se-video')?.value??s.video_url??'';
-  renderSlideCards(); goBack('s-module');
+  if(s){
+    s.titulo=s.title=document.getElementById('se-titulo')?.value??s.titulo??'';
+    s.tipo=s.type=document.getElementById('se-tipo')?.value??s.tipo??'texto';
+    s.cuerpo=s.msg=document.getElementById('se-cuerpo')?.value??s.cuerpo??'';
+    s.video_url=s.url=document.getElementById('se-video')?.value??s.video_url??'';
+  }
+  renderSlideCards();goBack('s-module');
 }
 
-// Types that use items[]
 const ITEM_TYPES=['cards','checklist','cols'];
-// Types that use steps[]
 const STEP_TYPES=['steps'];
 
-function renderSlideEditorBody(i){
-  const s=cur.slides[i];
-  const tipo=s.tipo||s.type||'texto';
-  const usesItems=ITEM_TYPES.includes(tipo);
-  const usesSteps=STEP_TYPES.includes(tipo);
-
-  document.getElementById('slide-editor-body').innerHTML=`
+function renderSlideBody(i){
+  const s=cur.slides[i];const tipo=s.tipo||s.type||'texto';
+  const usesItems=ITEM_TYPES.includes(tipo),usesSteps=STEP_TYPES.includes(tipo);
+  document.getElementById('slide-body').innerHTML=`
     <div class="field"><label>Tipo de slide</label>
       <select id="se-tipo" onchange="onTipoChange(${i},this.value)">
         <option value="texto"     ${tipo==='texto'    ?'selected':''}>Texto libre</option>
         <option value="imagen"    ${tipo==='imagen'   ?'selected':''}>Imagen + texto</option>
         <option value="notice"    ${tipo==='notice'   ?'selected':''}>Aviso destacado</option>
         <option value="video"     ${tipo==='video'    ?'selected':''}>Video</option>
-        <option value="cards"     ${tipo==='cards'    ?'selected':''}>Tarjetas (iconos + texto)</option>
+        <option value="cards"     ${tipo==='cards'    ?'selected':''}>Tarjetas (ícono + texto)</option>
         <option value="checklist" ${tipo==='checklist'?'selected':''}>Lista de verificación</option>
         <option value="steps"     ${tipo==='steps'    ?'selected':''}>Pasos numerados</option>
       </select>
     </div>
-
-    <div class="field"><label>Título del slide</label>
-      <input type="text" id="se-titulo" value="${esc(s.titulo||s.title||'')}" placeholder="Título…">
-    </div>
-
-    ${!usesItems&&!usesSteps?`
-    <div class="field"><label>Texto / Descripción</label>
-      <textarea id="se-cuerpo" style="min-height:110px" placeholder="Contenido…">${esc(s.cuerpo||s.msg||s.desc||'')}</textarea>
-    </div>`:''}
-
-    ${tipo==='imagen'?renderImgSection(i,s):''}
-    ${tipo==='video'?`<div class="field"><label>URL del video (YouTube, Vimeo, .mp4)</label><input type="text" id="se-video" value="${esc(s.video_url||s.url||'')}" placeholder="https://…"></div>`:''}
-
-    ${usesItems?renderItemsEditor(i,s):''}
-    ${usesSteps?renderStepsEditor(i,s):''}
-
-    <div style="height:16px"></div>
-    <button class="btn btn-red btn-full" onclick="confirmDelSlide(${i});goBack('s-module')">🗑 Eliminar este slide</button>
-  `;
+    <div class="field"><label>Título</label><input type="text" id="se-titulo" value="${esc(s.titulo||s.title||'')}" placeholder="Título del slide…"></div>
+    ${!usesItems&&!usesSteps?`<div class="field"><label>Texto / Descripción</label><textarea id="se-cuerpo" style="min-height:110px" placeholder="Contenido…">${esc(s.cuerpo||s.msg||s.desc||'')}</textarea></div>`:''}
+    ${tipo==='imagen'?`<div class="field"><label>Imagen</label>${s.imagen_url||s.img?`<img src="${s.imagen_url||s.img}" class="img-prev">`:''}
+      <label class="upload-lbl"><input type="file" accept="image/*" style="display:none" onchange="pickSlideImg(event,${i})">📁 ${s.imagen_url||s.img?'Cambiar':'Subir imagen'}</label></div>`:''}
+    ${tipo==='video'?`<div class="field"><label>URL del video</label><input type="text" id="se-video" value="${esc(s.video_url||s.url||'')}" placeholder="https://youtube.com/…"></div>`:''}
+    ${usesItems?renderItemsEd(i,s):''}
+    ${usesSteps?renderStepsEd(i,s):''}
+    <div style="height:14px"></div>
+    <button class="btn btn-red btn-full" onclick="confirmDelSlide(${i});goBack('s-module')">🗑 Eliminar slide</button>`;
 }
 
-// ── ITEMS EDITOR (cards / checklist) ──
-function renderItemsEditor(i,s){
-  const items=s.items||[];
-  const isCards=(s.tipo||s.type)==='cards';
+function renderItemsEd(i,s){
+  const items=s.items||[];const isCards=(s.tipo||s.type)==='cards';
   const rows=items.map((it,j)=>`
     <div style="background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px">
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:${isCards?'8px':'0'}">
-        ${isCards?`<input type="text" value="${esc(it.icon||'')}" placeholder="🔧" style="width:52px;text-align:center;font-size:18px;flex-shrink:0" oninput="cur.slides[${i}].items[${j}].icon=this.value">`:''}
-        <input type="text" value="${esc(it.label||it.text||it.titulo||'')}" placeholder="Texto del ítem" style="flex:1" oninput="cur.slides[${i}].items[${j}].label=cur.slides[${i}].items[${j}].text=this.value">
+      <div style="display:flex;gap:8px;align-items:center;${isCards?'margin-bottom:6px':''}">
+        ${isCards?`<input type="text" value="${esc(it.icon||'')}" placeholder="🔧" style="width:50px;text-align:center;font-size:20px;flex-shrink:0;padding:6px" oninput="cur.slides[${i}].items[${j}].icon=this.value">`:''}
+        <input type="text" value="${esc(it.label||it.text||'')}" placeholder="${isCards?'Nombre de la tarjeta':'Ítem de la lista'}" style="flex:1" oninput="cur.slides[${i}].items[${j}].label=cur.slides[${i}].items[${j}].text=this.value">
         <button class="btn btn-red btn-sm" onclick="delItem(${i},${j})" style="padding:6px 10px;flex-shrink:0">✕</button>
       </div>
-      ${isCards?`<textarea placeholder="Descripción (opcional)" style="min-height:55px;font-size:12px" oninput="cur.slides[${i}].items[${j}].desc=this.value">${esc(it.desc||'')}</textarea>`:''}
+      ${isCards?`<textarea placeholder="Descripción (opcional)" style="min-height:50px;font-size:12px" oninput="cur.slides[${i}].items[${j}].desc=this.value">${esc(it.desc||'')}</textarea>`:''}
     </div>`).join('');
-  return`<div class="field">
-    <label>${isCards?'Tarjetas':'Ítems de la lista'} (${items.length})</label>
-    <div id="items-list-${i}">${rows}</div>
-    <button class="btn btn-ghost btn-full" style="margin-top:4px" onclick="addItem(${i})">＋ Agregar ${isCards?'tarjeta':'ítem'}</button>
-  </div>`;
+  return`<div class="field"><label>${isCards?'Tarjetas':'Ítems'} (${items.length})</label>${rows}<button class="btn btn-ghost btn-full btn-sm" onclick="addItem(${i})">＋ Agregar ${isCards?'tarjeta':'ítem'}</button></div>`;
 }
-
-// ── STEPS EDITOR ──
-function renderStepsEditor(i,s){
+function renderStepsEd(i,s){
   const steps=s.steps||[];
-  const rows=steps.map((st,j)=>{
-    const txt=typeof st==='string'?st:(st.text||'');
-    return`<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px">
-      <div style="width:24px;height:24px;border-radius:50%;background:var(--accent);color:#0F1923;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:8px">${j+1}</div>
-      <textarea placeholder="Descripción del paso…" style="flex:1;min-height:60px;font-size:13px" oninput="cur.slides[${i}].steps[${j}]=this.value">${esc(txt)}</textarea>
-      <button class="btn btn-red btn-sm" onclick="delStep(${i},${j})" style="padding:6px 10px;margin-top:6px;flex-shrink:0">✕</button>
-    </div>`;
-  }).join('');
-  return`<div class="field">
-    <label>Pasos (${steps.length})</label>
-    <div>${rows}</div>
-    <button class="btn btn-ghost btn-full" style="margin-top:4px" onclick="addStep(${i})">＋ Agregar paso</button>
-  </div>`;
+  const rows=steps.map((st,j)=>{const txt=typeof st==='string'?st:(st.text||'');return`<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px"><div style="width:26px;height:26px;border-radius:50%;background:var(--accent);color:#0F1923;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:8px">${j+1}</div><textarea style="flex:1;min-height:60px;font-size:13px" placeholder="Descripción del paso…" oninput="cur.slides[${i}].steps[${j}]=this.value">${esc(txt)}</textarea><button class="btn btn-red btn-sm" onclick="delStep(${i},${j})" style="padding:6px 10px;margin-top:8px;flex-shrink:0">✕</button></div>`;}).join('');
+  return`<div class="field"><label>Pasos (${steps.length})</label>${rows}<button class="btn btn-ghost btn-full btn-sm" onclick="addStep(${i})">＋ Agregar paso</button></div>`;
 }
 
-function addItem(i){
-  if(!cur.slides[i].items)cur.slides[i].items=[];
-  cur.slides[i].items.push({icon:'',label:'',text:'',desc:''});
-  renderSlideEditorBody(i);
-}
-function delItem(i,j){
-  cur.slides[i].items.splice(j,1);
-  renderSlideEditorBody(i);
-}
-function addStep(i){
-  if(!cur.slides[i].steps)cur.slides[i].steps=[];
-  cur.slides[i].steps.push('');
-  renderSlideEditorBody(i);
-}
-function delStep(i,j){
-  cur.slides[i].steps.splice(j,1);
-  renderSlideEditorBody(i);
-}
-
-function onTipoChange(i,val){
-  const s=cur.slides[i];
-  s.titulo=s.title=document.getElementById('se-titulo')?.value||s.titulo||'';
-  s.cuerpo=s.msg=document.getElementById('se-cuerpo')?.value||s.cuerpo||'';
-  s.tipo=s.type=val;
-  if(!s.items)s.items=[];
-  if(!s.steps)s.steps=[];
-  renderSlideEditorBody(i);
-}
-
-function renderImgSection(i,s){
-  return`<div class="field"><label>Imagen</label>
-    ${s.imagen_url||s.img?`<img src="${s.imagen_url||s.img}" class="img-prev">`:''}
-    <label class="upload-btn" style="cursor:pointer">
-      📁 ${s.imagen_url||s.img?'Cambiar imagen':'Subir imagen'}
-      <input type="file" accept="image/*" style="display:none" onchange="pickSlideImg(event,${i})">
-    </label>
-  </div>`;
-}
+function addItem(i){if(!cur.slides[i].items)cur.slides[i].items=[];cur.slides[i].items.push({icon:'',label:'',text:'',desc:''});renderSlideBody(i);}
+function delItem(i,j){cur.slides[i].items.splice(j,1);renderSlideBody(i);}
+function addStep(i){if(!cur.slides[i].steps)cur.slides[i].steps=[];cur.slides[i].steps.push('');renderSlideBody(i);}
+function delStep(i,j){cur.slides[i].steps.splice(j,1);renderSlideBody(i);}
+function onTipoChange(i,val){const s=cur.slides[i];s.titulo=s.title=document.getElementById('se-titulo')?.value||s.titulo||'';s.cuerpo=s.msg=document.getElementById('se-cuerpo')?.value||s.cuerpo||'';s.tipo=s.type=val;if(!s.items)s.items=[];if(!s.steps)s.steps=[];renderSlideBody(i);}
 
 async function pickSlideImg(event,i){
   const f=event.target.files[0];if(!f)return;
@@ -857,112 +699,216 @@ async function pickSlideImg(event,i){
   try{
     const url=await uploadFile(f,'slides/');
     cur.slides[i].imagen_url=cur.slides[i].img=url;
-    renderSlideEditorBody(i);
-    toast('Imagen cargada','ok');
+    // Ask if interactive
+    pendingImg={url,slideIdx:i};
+    document.getElementById('interactive-preview').src=url;
+    document.getElementById('interactive-overlay').classList.add('on');
+    renderSlideBody(i);toast('Imagen cargada','ok');
   }catch(e){toast('Error: '+e.message,'err');}
+}
+function skipInteractive(){document.getElementById('interactive-overlay').classList.remove('on');}
+function useAsZona(){
+  document.getElementById('interactive-overlay').classList.remove('on');
+  // Set as zona base image and switch to zona tab
+  cur.zonas.imagen_base=pendingImg.url;
+  if(!cur.zonas.hotspots)cur.zonas.hotspots=[];
+  switchTab('zonas');renderZonaTab();
+  toast('Ahora marcá las zonas del equipo','info');
 }
 
 function moveUp(i){if(i>0){[cur.slides[i],cur.slides[i-1]]=[cur.slides[i-1],cur.slides[i]];renderSlideCards();}}
 function moveDown(i){if(i<cur.slides.length-1){[cur.slides[i],cur.slides[i+1]]=[cur.slides[i+1],cur.slides[i]];renderSlideCards();}}
+function confirmDelSlide(i){showModal('Eliminar slide',`¿Eliminás el slide ${i+1} "${cur.slides[i]?.titulo||'Sin título'}"?`,()=>{cur.slides.splice(i,1);renderSlideCards();});}
 
-function confirmDelSlide(i){
-  document.getElementById('modal-title').textContent='Eliminar slide';
-  document.getElementById('modal-body').textContent=`¿Eliminás el slide ${i+1} "${cur.slides[i]?.titulo||'Sin título'}"?`;
-  document.getElementById('modal-ok').onclick=()=>{cur.slides.splice(i,1);renderSlideCards();closeModal();};
-  document.getElementById('modal').classList.add('on');
+// ── PASTE TEXT → SLIDES ──
+function openPaste(){document.getElementById('paste-overlay').classList.add('on');}
+function parsePaste(){
+  const text=document.getElementById('paste-text').value.trim();
+  if(!text){toast('Pegá texto primero','err');return;}
+  const slides=textToSlides(text);
+  if(!slides.length){toast('No se detectó contenido estructurado','err');return;}
+  cur.slides.push(...slides);
+  renderSlideCards();
+  document.getElementById('paste-overlay').classList.remove('on');
+  document.getElementById('paste-text').value='';
+  toast(`✓ ${slides.length} slides creados`,'ok');
 }
 
-// ══════════ ZONAS ══════════
+function textToSlides(text){
+  const slides=[];
+  // Split into paragraphs (blank line = new section)
+  const paras=text.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean);
+
+  paras.forEach(para=>{
+    const lines=para.split('\n').map(l=>l.trim()).filter(Boolean);
+    if(!lines.length)return;
+
+    // AVISO / NOTICE: starts with keywords or emoji warnings
+    if(/^(importante|atención|atencion|advertencia|warning|precaución|precaucion|nota:|🔴|🟡|⚠|❗|💡|🚨)/i.test(lines[0])){
+      slides.push({id:uid(),tipo:'notice',type:'notice',titulo:lines[0],title:lines[0],cuerpo:lines.slice(1).join('\n'),msg:lines.slice(1).join('\n'),items:[],steps:[]});
+      return;
+    }
+
+    // PASOS NUMERADOS: múltiples líneas con "1. " "2. " etc
+    const numbered=lines.filter(l=>/^\d+[\.\)]\s/.test(l));
+    if(numbered.length>=2&&numbered.length===lines.length-1||numbered.length===lines.length){
+      const title=numbered.length<lines.length?lines[0]:'';
+      const steps=numbered.map(l=>l.replace(/^\d+[\.\)]\s+/,''));
+      slides.push({id:uid(),tipo:'steps',type:'steps',titulo:title||'Procedimiento',title:title||'Procedimiento',cuerpo:'',msg:'',items:[],steps});
+      return;
+    }
+
+    // LISTA / CHECKLIST: múltiples líneas con guiones o viñetas
+    const bulleted=lines.filter(l=>/^[-•*·]\s/.test(l));
+    if(bulleted.length>=2&&bulleted.length>=lines.length-1){
+      const title=bulleted.length<lines.length?lines[0]:'';
+      const items=bulleted.map(l=>({id:uid(),text:l.replace(/^[-•*·]\s+/,''),label:l.replace(/^[-•*·]\s+/,''),icon:'',desc:''}));
+      slides.push({id:uid(),tipo:'checklist',type:'checklist',titulo:title||'Lista',title:title||'Lista',cuerpo:'',msg:'',items,steps:[]});
+      return;
+    }
+
+    // TEXTO: título corto + párrafo largo, o párrafo solo
+    const isTitle=lines[0].length<70&&!lines[0].endsWith('.');
+    const title=isTitle?lines[0]:'';
+    const body=isTitle?lines.slice(1).join('\n'):lines.join('\n');
+    slides.push({id:uid(),tipo:'texto',type:'texto',titulo:title,title,cuerpo:body,msg:body,imagen_url:'',video_url:'',items:[],steps:[]});
+  });
+  return slides;
+}
+
+// ══════════════════════════════════════════
+// ZONAS (RECTANGLE DRAW)
+// ══════════════════════════════════════════
 function renderZonaTab(){
   const z=cur.zonas;
-  const wrap=document.getElementById('hs-wrap'),noimg=document.getElementById('zona-noimg'),img=document.getElementById('hs-img');
-  if(z.imagen_base){img.src=z.imagen_base;wrap.style.display='block';noimg.style.display='none';}
-  else{wrap.style.display='none';noimg.style.display='block';}
-  renderHsDots(); renderHsCards();
+  const container=document.getElementById('zona-container');
+  const noimg=document.getElementById('zona-noimg');
+  if(z.imagen_base){
+    document.getElementById('zona-img').src=z.imagen_base;
+    container.style.display='block';noimg.style.display='none';
+  }else{container.style.display='none';noimg.style.display='block';}
+  renderZonaRects();renderZonaCards();
 }
-function renderHsDots(){
-  const wrap=document.getElementById('hs-wrap');
-  wrap.querySelectorAll('.hs-dot').forEach(d=>d.remove());
+
+function renderZonaRects(){
+  const overlay=document.getElementById('zona-overlay');
+  overlay.innerHTML='';
+  const img=document.getElementById('zona-img');
   (cur.zonas.hotspots||[]).forEach((h,i)=>{
-    const d=document.createElement('div');
-    d.className='hs-dot'+(hsIdx===i?' sel':'');
-    d.style.left=(h.x*100)+'%';d.style.top=(h.y*100)+'%';d.textContent=i+1;
-    d.onclick=e=>{e.stopPropagation();editHs(i);};
-    wrap.appendChild(d);
+    const div=document.createElement('div');
+    div.className='zona-rect'+(zonaIdx===i?' sel':'');
+    const {x,y,w,h:hh}=normalizeZona(h);
+    div.style.left=(x*100)+'%';div.style.top=(y*100)+'%';
+    div.style.width=((w||.12)*100)+'%';div.style.height=((hh||.12)*100)+'%';
+    const num=document.createElement('div');
+    num.className='zona-num'+(zonaIdx===i?' sel':'');num.textContent=i+1;
+    div.appendChild(num);
+    div.onclick=e=>{e.stopPropagation();editZona(i);};
+    overlay.appendChild(div);
   });
 }
-function renderHsCards(){
-  const el=document.getElementById('hs-cards');
+function normalizeZona(h){
+  // Support both old {x,y} point and new {x,y,w,h} rect
+  return{x:h.x||0,y:h.y||0,w:h.w||.12,h:h.h||.10};
+}
+
+function renderZonaCards(){
+  const el=document.getElementById('zona-cards');
   const hs=cur.zonas.hotspots||[];
   if(!hs.length){el.innerHTML='';return;}
   el.innerHTML=hs.map((h,i)=>`
     <div class="item-card">
       <div class="item-card-body">
-        <div class="item-num">Hotspot ${i+1}</div>
+        <div class="item-num">Zona ${i+1}</div>
         <div class="item-title">${esc(h.nombre||'Sin nombre')}</div>
         ${h.descripcion?`<div class="item-preview">${esc(h.descripcion)}</div>`:''}
       </div>
       <div class="item-actions">
-        <button class="item-action ia-edit" onclick="editHs(${i})">✏ Editar</button>
-        <button class="item-action ia-del" onclick="confirmDelHs(${i})">🗑</button>
+        <button class="item-action ia-edit" onclick="editZona(${i})">✏ Editar</button>
+        <button class="item-action ia-del" onclick="confirmDelZona(${i})">🗑</button>
       </div>
     </div>`).join('');
 }
+
 async function uploadZonaBase(event){
   const f=event.target.files[0];if(!f)return;
-  toast('Subiendo imagen…','info');
-  try{const url=await uploadFile(f,'zonas/');cur.zonas.imagen_base=url;renderZonaTab();toast('Imagen cargada','ok');}
+  toast('Subiendo imagen base…','info');
+  try{const url=await uploadFile(f,'zonas/');cur.zonas.imagen_base=url;renderZonaTab();toast('Imagen cargada. Ahora marcá las zonas.','ok');}
   catch(e){toast('Error: '+e.message,'err');}
 }
-function startAddHs(){
+
+// DRAW MODE
+function startDraw(){
   if(!cur.zonas.imagen_base){toast('Primero subí una imagen base','err');return;}
-  addingHs=true;toast('Tocá la imagen para colocar el hotspot','info');
+  drawMode=true;drawStart=null;drawCurrent=null;
+  document.getElementById('zona-draw-banner').style.display='block';
+  const container=document.getElementById('zona-container');
+  // Touch events
+  container.addEventListener('touchstart',onDrawStart,{passive:false});
+  container.addEventListener('touchmove',onDrawMove,{passive:false});
+  container.addEventListener('touchend',onDrawEnd,{passive:false});
+  // Mouse events (desktop)
+  container.addEventListener('mousedown',onDrawStartM);
+  container.addEventListener('mousemove',onDrawMoveM);
+  container.addEventListener('mouseup',onDrawEndM);
 }
-function imgClick(event){
-  if(!addingHs)return;addingHs=false;
-  const rect=event.currentTarget.getBoundingClientRect();
-  const x=+((event.clientX-rect.left)/rect.width).toFixed(4);
-  const y=+((event.clientY-rect.top)/rect.height).toFixed(4);
-  cur.zonas.hotspots.push({id:uid(),nombre:'',descripcion:'',x,y});
-  hsIdx=cur.zonas.hotspots.length-1;
-  renderHsDots();renderHsCards();editHs(hsIdx);
-}
-function editHs(i){
-  hsIdx=i;const h=cur.zonas.hotspots[i];
-  document.getElementById('hs-nombre').value=h.nombre||'';
-  document.getElementById('hs-desc').value=h.descripcion||'';
-  goTo('s-hs');
-}
-function saveHsAndBack(){
-  if(hsIdx===null){goBack('s-module');return;}
-  cur.zonas.hotspots[hsIdx].nombre=document.getElementById('hs-nombre').value;
-  cur.zonas.hotspots[hsIdx].descripcion=document.getElementById('hs-desc').value;
-  renderHsDots();renderHsCards();goBack('s-module');
-}
-function deleteHsAndBack(){
-  cur.zonas.hotspots.splice(hsIdx,1);hsIdx=null;
-  renderHsDots();renderHsCards();goBack('s-module');
-}
-function confirmDelHs(i){
-  document.getElementById('modal-title').textContent='Eliminar hotspot';
-  document.getElementById('modal-body').textContent=`¿Eliminás "${cur.zonas.hotspots[i]?.nombre||'hotspot '+(i+1)}"?`;
-  document.getElementById('modal-ok').onclick=()=>{cur.zonas.hotspots.splice(i,1);renderHsDots();renderHsCards();closeModal();};
-  document.getElementById('modal').classList.add('on');
+function stopDraw(){
+  drawMode=false;drawStart=null;drawCurrent=null;
+  document.getElementById('zona-draw-banner').style.display='none';
+  document.getElementById('zona-overlay').querySelectorAll('.preview-rect').forEach(e=>e.remove());
+  const c=document.getElementById('zona-container');
+  c.removeEventListener('touchstart',onDrawStart);c.removeEventListener('touchmove',onDrawMove);c.removeEventListener('touchend',onDrawEnd);
+  c.removeEventListener('mousedown',onDrawStartM);c.removeEventListener('mousemove',onDrawMoveM);c.removeEventListener('mouseup',onDrawEndM);
 }
 
-// ══════════ QUIZ ══════════
+function getRelativePos(clientX,clientY){
+  const img=document.getElementById('zona-img');
+  const r=img.getBoundingClientRect();
+  return{x:Math.max(0,Math.min(1,(clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(clientY-r.top)/r.height))};
+}
+
+function onDrawStart(e){e.preventDefault();const t=e.touches[0];drawStart=getRelativePos(t.clientX,t.clientY);}
+function onDrawMove(e){e.preventDefault();if(!drawStart)return;const t=e.touches[0];drawCurrent=getRelativePos(t.clientX,t.clientY);showPreviewRect();}
+function onDrawEnd(e){e.preventDefault();if(!drawStart||!drawCurrent)return;finishDraw();stopDraw();}
+function onDrawStartM(e){drawStart=getRelativePos(e.clientX,e.clientY);}
+function onDrawMoveM(e){if(!drawStart)return;drawCurrent=getRelativePos(e.clientX,e.clientY);showPreviewRect();}
+function onDrawEndM(e){if(!drawStart||!drawCurrent)return;finishDraw();stopDraw();}
+
+function showPreviewRect(){
+  const overlay=document.getElementById('zona-overlay');
+  let pr=overlay.querySelector('.preview-rect');
+  if(!pr){pr=document.createElement('div');pr.className='preview-rect zona-rect';overlay.appendChild(pr);}
+  const x=Math.min(drawStart.x,drawCurrent.x),y=Math.min(drawStart.y,drawCurrent.y);
+  const w=Math.abs(drawCurrent.x-drawStart.x),h=Math.abs(drawCurrent.y-drawStart.y);
+  pr.style.left=(x*100)+'%';pr.style.top=(y*100)+'%';pr.style.width=(w*100)+'%';pr.style.height=(h*100)+'%';
+}
+function finishDraw(){
+  const x=Math.min(drawStart.x,drawCurrent.x),y=Math.min(drawStart.y,drawCurrent.y);
+  const w=Math.abs(drawCurrent.x-drawStart.x),h=Math.abs(drawCurrent.y-drawStart.y);
+  if(w<.03||h<.03){toast('Zona muy pequeña. Arrastrá más.','err');return;}
+  cur.zonas.hotspots.push({id:uid(),nombre:'',descripcion:'',x:+x.toFixed(4),y:+y.toFixed(4),w:+w.toFixed(4),h:+h.toFixed(4)});
+  zonaIdx=cur.zonas.hotspots.length-1;
+  renderZonaRects();renderZonaCards();
+  editZona(zonaIdx);
+}
+
+function editZona(i){zonaIdx=i;const h=cur.zonas.hotspots[i];document.getElementById('zona-nombre').value=h.nombre||'';document.getElementById('zona-desc').value=h.descripcion||'';goTo('s-zona');}
+function saveZonaBack(){if(zonaIdx!==null){cur.zonas.hotspots[zonaIdx].nombre=document.getElementById('zona-nombre').value;cur.zonas.hotspots[zonaIdx].descripcion=document.getElementById('zona-desc').value;}renderZonaRects();renderZonaCards();goBack('s-module');}
+function deleteZonaBack(){if(zonaIdx!==null)cur.zonas.hotspots.splice(zonaIdx,1);zonaIdx=null;renderZonaRects();renderZonaCards();goBack('s-module');}
+function confirmDelZona(i){showModal('Eliminar zona',`¿Eliminás la zona "${cur.zonas.hotspots[i]?.nombre||i+1}"?`,()=>{cur.zonas.hotspots.splice(i,1);renderZonaRects();renderZonaCards();});}
+
+// ══════════════════════════════════════════
+// QUIZ
+// ══════════════════════════════════════════
 function renderQuizCards(){
   const el=document.getElementById('quiz-list');
-  if(!cur.quiz.length){
-    el.innerHTML=`<div class="empty-state"><div class="empty-icon">❓</div><div class="empty-label">Sin preguntas todavía.<br>Tocá ＋ para agregar una.</div></div>`;
-    return;
-  }
+  if(!cur.quiz.length){el.innerHTML=`<div class="empty-state" style="padding:30px 0"><div class="empty-icon">❓</div><div style="font-size:13px">Sin preguntas. Tocá ＋.</div></div>`;return;}
   el.innerHTML=cur.quiz.map((q,i)=>`
     <div class="item-card">
       <div class="item-card-body">
         <div class="item-num">Pregunta ${i+1}</div>
         <div class="item-title">${esc(q.pregunta||'Sin pregunta')}</div>
-        <div class="item-type">${(q.opciones||[]).length} opciones · correcta: ${(q.opciones||[])[q.correcta]?esc((q.opciones||[])[q.correcta]).slice(0,30):'?'}</div>
+        <div style="font-size:11px;color:var(--t2);margin-top:4px">${(q.opciones||[]).length} opciones · ✓ ${esc((q.opciones||[])[q.correcta]||'').slice(0,30)}</div>
       </div>
       <div class="item-actions">
         <button class="item-action ia-edit" onclick="editQ(${i})">✏ Editar</button>
@@ -970,95 +916,196 @@ function renderQuizCards(){
       </div>
     </div>`).join('');
 }
-function addQ(){
-  cur.quiz.push({id:uid(),pregunta:'',opciones:['','','',''],correcta:0,explicacion:''});
-  editQ(cur.quiz.length-1);
-}
-function editQ(i){
-  qIdx=i;
-  document.getElementById('quiz-topbar-title').textContent=`Pregunta ${i+1}`;
-  renderQEditorBody(i);goTo('s-quiz');
-}
-function renderQEditorBody(i){
+function addQ(){cur.quiz.push({id:uid(),pregunta:'',opciones:['','','',''],correcta:0,explicacion:''});editQ(cur.quiz.length-1);}
+function editQ(i){qIdx=i;document.getElementById('quiz-topbar-title').textContent=`Pregunta ${i+1}`;renderQBody(i);goTo('s-quiz');}
+function renderQBody(i){
   const q=cur.quiz[i];const opts=q.opciones||['','','',''];
-  document.getElementById('quiz-editor-body').innerHTML=`
-    <div class="field"><label>Enunciado de la pregunta</label>
-      <textarea id="qe-preg" style="min-height:110px" placeholder="¿Cuál es…?">${esc(q.pregunta||'')}</textarea>
-    </div>
-    <div class="field"><label>Opciones — marcá la correcta</label>
-      ${opts.map((o,oi)=>`
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">
-          <input type="radio" name="qcorr" style="accent-color:var(--accent);width:18px;height:18px;cursor:pointer;flex-shrink:0" ${q.correcta===oi?'checked':''} onchange="cur.quiz[${i}].correcta=${oi}">
-          <input type="text" value="${esc(o)}" placeholder="Opción ${oi+1}" style="flex:1" oninput="cur.quiz[${i}].opciones[${oi}]=this.value">
-          ${opts.length>2?`<button class="btn btn-ghost btn-sm" onclick="delOpt(${i},${oi})" style="padding:6px 10px;flex-shrink:0">✕</button>`:''}
-        </div>`).join('')}
+  document.getElementById('quiz-body').innerHTML=`
+    <div class="field"><label>Enunciado</label><textarea id="qe-p" style="min-height:100px" placeholder="¿Cuál es…?" oninput="cur.quiz[${i}].pregunta=this.value">${esc(q.pregunta||'')}</textarea></div>
+    <div class="field"><label>Opciones — marcá la correcta ✓</label>
+      ${opts.map((o,oi)=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">
+        <input type="radio" name="qr${i}" style="accent-color:var(--accent);width:18px;height:18px;flex-shrink:0;cursor:pointer" ${q.correcta===oi?'checked':''} onchange="cur.quiz[${i}].correcta=${oi}">
+        <input type="text" value="${esc(o)}" placeholder="Opción ${oi+1}" style="flex:1" oninput="cur.quiz[${i}].opciones[${oi}]=this.value">
+        ${opts.length>2?`<button class="btn btn-red btn-sm" onclick="delOpt(${i},${oi})" style="padding:6px 10px;flex-shrink:0">✕</button>`:''}
+      </div>`).join('')}
       ${opts.length<6?`<button class="btn btn-ghost btn-sm" onclick="addOpt(${i})">＋ Opción</button>`:''}
     </div>
-    <div class="field"><label>Explicación (opcional)</label>
-      <textarea id="qe-exp" style="min-height:70px" placeholder="Porque…">${esc(q.explicacion||'')}</textarea>
-    </div>
-    <div style="height:20px"></div>
-    <button class="btn btn-red btn-full" onclick="confirmDelQ(${i});goBack('s-module')">🗑 Eliminar pregunta</button>
-  `;
+    <div class="field"><label>Explicación (opcional)</label><textarea id="qe-e" style="min-height:60px" placeholder="Porque…" oninput="cur.quiz[${i}].explicacion=this.value">${esc(q.explicacion||'')}</textarea></div>
+    <div style="height:10px"></div>
+    <button class="btn btn-red btn-full" onclick="confirmDelQ(${i});goBack('s-module')">🗑 Eliminar pregunta</button>`;
 }
-function saveQAndBack(){
-  const q=cur.quiz[qIdx];if(!q){goBack('s-module');return;}
-  q.pregunta=document.getElementById('qe-preg')?.value||q.pregunta;
-  q.explicacion=document.getElementById('qe-exp')?.value||q.explicacion;
-  renderQuizCards();goBack('s-module');
+function saveQBack(){renderQuizCards();goBack('s-module');}
+function addOpt(i){cur.quiz[i].opciones.push('');renderQBody(i);}
+function delOpt(i,oi){const q=cur.quiz[i];q.opciones.splice(oi,1);if(q.correcta>=q.opciones.length)q.correcta=0;renderQBody(i);}
+function confirmDelQ(i){showModal('Eliminar pregunta',`¿Eliminás la pregunta ${i+1}?`,()=>{cur.quiz.splice(i,1);renderQuizCards();});}
+
+// ══════════════════════════════════════════
+// PREVIEW
+// ══════════════════════════════════════════
+function openPreview(){
+  prevIdx=0;
+  document.getElementById('prev-title').textContent=cur.data.nombre||'Vista previa';
+  renderPrevSlide();
+  goTo('s-preview');
 }
-function addOpt(i){cur.quiz[i].opciones.push('');renderQEditorBody(i);}
-function delOpt(i,oi){const q=cur.quiz[i];q.opciones.splice(oi,1);if(q.correcta>=q.opciones.length)q.correcta=0;renderQEditorBody(i);}
-function confirmDelQ(i){
-  document.getElementById('modal-title').textContent='Eliminar pregunta';
-  document.getElementById('modal-body').textContent=`¿Eliminás la pregunta ${i+1}?`;
-  document.getElementById('modal-ok').onclick=()=>{cur.quiz.splice(i,1);renderQuizCards();closeModal();};
-  document.getElementById('modal').classList.add('on');
+function prevSlide(){if(prevIdx>0){prevIdx--;renderPrevSlide();}}
+function nextSlide(){
+  const total=cur.slides.length+(cur.quiz.length?1:0);
+  if(prevIdx<total-1){prevIdx++;renderPrevSlide();}
+}
+function renderPrevSlide(){
+  const total=cur.slides.length+(cur.quiz.length?1:0);
+  document.getElementById('prev-num').textContent=`${prevIdx+1} / ${total||1}`;
+  document.getElementById('btn-prev').disabled=prevIdx===0;
+  document.getElementById('btn-next').disabled=prevIdx>=total-1;
+  const area=document.getElementById('prev-slide-area');
+  // Quiz screen
+  if(prevIdx>=cur.slides.length){area.innerHTML=renderQuizPreview();return;}
+  const s=cur.slides[prevIdx];
+  const tipo=s.tipo||s.type||'texto';
+  let html=`<div style="padding:20px">`;
+  if(tipo==='notice')html+=`<div class="preview-notice"><div style="font-size:18px;font-weight:700;margin-bottom:8px">⚠ ${esc(s.titulo||s.title||'')}</div><div style="font-size:14px;color:var(--t2)">${esc(s.cuerpo||s.msg||'')}</div></div>`;
+  else if(tipo==='imagen')html+=`${s.imagen_url||s.img?`<img src="${s.imagen_url||s.img}" class="preview-img-full">`:'<div style="background:var(--s2);height:180px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--t3)">Sin imagen</div>'}<div style="font-size:19px;font-weight:700;margin:12px 0 6px">${esc(s.titulo||s.title||'')}</div><div style="font-size:14px;color:var(--t2);line-height:1.6">${esc(s.cuerpo||s.msg||'')}</div>`;
+  else if(tipo==='cards'){html+=`<div style="font-size:19px;font-weight:700;margin-bottom:12px">${esc(s.titulo||s.title||'')}</div><div class="preview-cards-grid">${(s.items||[]).map(it=>`<div class="preview-card"><div class="preview-card-icon">${it.icon||'📌'}</div><div class="preview-card-label">${esc(it.label||it.text||'')}</div>${it.desc?`<div class="preview-card-desc">${esc(it.desc)}</div>`:''}</div>`).join('')}</div>`;}
+  else if(tipo==='steps')html+=`<div style="font-size:19px;font-weight:700;margin-bottom:12px">${esc(s.titulo||s.title||'')}</div>${(s.steps||[]).map((st,j)=>`<div class="preview-step"><div class="preview-step-num">${j+1}</div><div style="font-size:14px;line-height:1.5">${esc(typeof st==='string'?st:st.text||'')}</div></div>`).join('')}`;
+  else if(tipo==='checklist')html+=`<div style="font-size:19px;font-weight:700;margin-bottom:12px">${esc(s.titulo||s.title||'')}</div>${(s.items||[]).map(it=>`<div class="preview-check"><div class="preview-check-box"></div><div style="font-size:14px">${esc(it.text||it.label||'')}</div></div>`).join('')}`;
+  else if(tipo==='video')html+=`<div style="font-size:19px;font-weight:700;margin-bottom:10px">${esc(s.titulo||s.title||'')}</div><div style="background:var(--s2);border-radius:8px;padding:20px;text-align:center;color:var(--accent);font-size:14px">▶ ${esc(s.video_url||s.url||'Sin URL')}</div>`;
+  else html+=`<div style="font-size:19px;font-weight:700;margin-bottom:10px">${esc(s.titulo||s.title||'')}</div><div style="font-size:14px;color:var(--t2);line-height:1.6;white-space:pre-wrap">${esc(s.cuerpo||s.msg||'')}</div>`;
+  html+='</div>';
+  area.innerHTML=html;
+}
+function renderQuizPreview(){
+  return`<div style="padding:20px"><div style="font-size:15px;font-weight:700;margin-bottom:16px;color:var(--accent)">Quiz — ${cur.quiz.length} preguntas</div>${cur.quiz.map((q,i)=>`<div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:10px"><div style="font-size:13px;font-weight:600;margin-bottom:10px">${i+1}. ${esc(q.pregunta||'')}</div>${(q.opciones||[]).map((o,oi)=>`<div style="padding:8px 10px;border-radius:6px;margin-bottom:6px;font-size:13px;${oi===q.correcta?'background:#064e3b;color:#6ee7b7;font-weight:600':'background:var(--s1);color:var(--t2)'}">${oi===q.correcta?'✓ ':''  }${esc(o)}</div>`).join('')}</div>`).join('')}</div>`;
+}
+
+// ══════════════════════════════════════════
+// LIBRARY
+// ══════════════════════════════════════════
+function getLibrary(){try{return JSON.parse(localStorage.getItem('apptus_lib')||'[]');}catch{return[];}}
+function setLibrary(lib){localStorage.setItem('apptus_lib',JSON.stringify(lib));}
+
+function saveZonaToLibrary(zonas,nombre){
+  if(!zonas.imagen_base)return;
+  const lib=getLibrary();
+  const existing=lib.findIndex(l=>l.imagen_base===zonas.imagen_base);
+  const entry={id:uid(),nombre:nombre||'Imagen',imagen_base:zonas.imagen_base,hotspots:zonas.hotspots||[],updatedAt:new Date().toISOString()};
+  if(existing>=0)lib[existing]=entry;else lib.unshift(entry);
+  setLibrary(lib);
+}
+
+async function addToLibrary(event){
+  const f=event.target.files[0];if(!f)return;
+  toast('Subiendo…','info');
+  try{
+    const url=await uploadFile(f,'biblioteca/');
+    const lib=getLibrary();
+    lib.unshift({id:uid(),nombre:f.name.replace(/\.[^.]+$/,''),imagen_base:url,hotspots:[],updatedAt:new Date().toISOString()});
+    setLibrary(lib);renderLibrary();
+    toast('Imagen agregada a la biblioteca','ok');
+  }catch(e){toast('Error: '+e.message,'err');}
+}
+
+function renderLibrary(){
+  const lib=getLibrary();
+  const el=document.getElementById('lib-list');
+  if(!lib.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">📚</div><div style="font-size:13px">Sin imágenes guardadas todavía.</div></div>`;return;}
+  el.innerHTML=lib.map((l,i)=>`
+    <div class="lib-card">
+      <img class="lib-thumb" src="${l.imagen_base}" onerror="this.style.background='var(--s3)'">
+      <div class="lib-info">
+        <div class="lib-name">${esc(l.nombre||'Sin nombre')}</div>
+        <div class="lib-meta">${(l.hotspots||[]).length} zonas marcadas</div>
+        <div style="display:flex;gap:7px;margin-top:8px">
+          <button class="btn btn-primary btn-sm" onclick="insertFromLib(${i})">Insertar zonas</button>
+          <button class="btn btn-ghost btn-sm" onclick="renameLib(${i})">✏</button>
+          <button class="btn btn-red btn-sm" onclick="deleteFromLib(${i})">🗑</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function insertFromLib(i){
+  const lib=getLibrary();const l=lib[i];
+  if(!cur){toast('Primero abrí un módulo','err');return;}
+  cur.zonas.imagen_base=l.imagen_base;
+  cur.zonas.hotspots=JSON.parse(JSON.stringify(l.hotspots||[]));
+  switchTab('zonas');renderZonaTab();
+  goBack('s-list');goTo('s-module');
+  toast('Imagen con zonas insertada','ok');
+}
+function renameLib(i){
+  const lib=getLibrary();
+  const n=prompt('Nuevo nombre:',lib[i].nombre);
+  if(n){lib[i].nombre=n;setLibrary(lib);renderLibrary();}
+}
+function deleteFromLib(i){
+  showModal('Eliminar de biblioteca','¿Eliminás esta imagen de la biblioteca?',()=>{const lib=getLibrary();lib.splice(i,1);setLibrary(lib);renderLibrary();});
+}
+
+// Insertar desde biblioteca en la pantalla de zonas del módulo
+function openBibliotecaParaZona(){
+  const lib=getLibrary();
+  const el=document.getElementById('bib-overlay-list');
+  if(!lib.length){el.innerHTML=`<div style="color:var(--t3);font-size:13px;padding:16px">Sin imágenes en la biblioteca todavía.</div>`;document.getElementById('bib-overlay').classList.add('on');return;}
+  el.innerHTML=lib.map((l,i)=>`
+    <div class="lib-card" onclick="insertFromLibToZona(${i})">
+      <img class="lib-thumb" src="${l.imagen_base}" onerror="this.style.background='var(--s3)'">
+      <div class="lib-info">
+        <div class="lib-name">${esc(l.nombre||'Sin nombre')}</div>
+        <div class="lib-meta">${(l.hotspots||[]).length} zonas · Tocar para insertar</div>
+      </div>
+    </div>`).join('');
+  document.getElementById('bib-overlay').classList.add('on');
+}
+function insertFromLibToZona(i){
+  const lib=getLibrary();const l=lib[i];
+  cur.zonas.imagen_base=l.imagen_base;
+  cur.zonas.hotspots=JSON.parse(JSON.stringify(l.hotspots||[]));
+  document.getElementById('bib-overlay').classList.remove('on');
+  renderZonaTab();toast('Imagen cargada desde biblioteca','ok');
+}
+
+function openBiblioteca(){
+  // Open from slides tab - insert image as slide
+  const lib=getLibrary();
+  const el=document.getElementById('bib-overlay-list');
+  if(!lib.length){el.innerHTML=`<div style="color:var(--t3);font-size:13px;padding:16px">Sin imágenes en la biblioteca.</div>`;document.getElementById('bib-overlay').classList.add('on');return;}
+  el.innerHTML=lib.map((l,i)=>`
+    <div class="lib-card" onclick="insertLibAsSlide(${i})">
+      <img class="lib-thumb" src="${l.imagen_base}" onerror="this.style.background='var(--s3)'">
+      <div class="lib-info">
+        <div class="lib-name">${esc(l.nombre||'Sin nombre')}</div>
+        <div class="lib-meta">Tocar para agregar como slide de imagen</div>
+      </div>
+    </div>`).join('');
+  document.getElementById('bib-overlay').classList.add('on');
+}
+function insertLibAsSlide(i){
+  const lib=getLibrary();const l=lib[i];
+  cur.slides.push({id:uid(),tipo:'imagen',type:'imagen',titulo:l.nombre||'',title:l.nombre||'',cuerpo:'',msg:'',imagen_url:l.imagen_base,img:l.imagen_base,video_url:'',items:[],steps:[]});
+  document.getElementById('bib-overlay').classList.remove('on');
+  renderSlideCards();toast('Imagen insertada como slide','ok');
 }
 
 // ── OBSERVATIONS ──
 function openObs(){
   const key='obs_'+(cur?.data?.id||'new');
-  const saved=localStorage.getItem(key)||'';
-  document.getElementById('obs-text').value=saved;
+  document.getElementById('obs-text').value=localStorage.getItem(key)||'';
   document.getElementById('obs-sub').textContent=`Notas para "${cur?.data?.nombre||'este módulo'}"`;
   document.getElementById('obs-overlay').classList.add('on');
 }
-function closeObs(){document.getElementById('obs-overlay').classList.remove('on');}
-function closeObsIfBg(e){if(e.target===document.getElementById('obs-overlay'))closeObs();}
-function saveObs(){
-  const key='obs_'+(cur?.data?.id||'new');
-  localStorage.setItem(key,document.getElementById('obs-text').value);
-  toast('Notas guardadas','ok');closeObs();
-}
-function copyObs(){
-  const txt=document.getElementById('obs-text').value;
-  if(!txt){toast('No hay notas para copiar','err');return;}
-  navigator.clipboard?.writeText(txt).then(()=>toast('Copiado al portapapeles','ok')).catch(()=>toast('Seleccioná el texto manualmente','info'));
-}
+function saveObs(){const key='obs_'+(cur?.data?.id||'new');localStorage.setItem(key,document.getElementById('obs-text').value);toast('Notas guardadas','ok');document.getElementById('obs-overlay').classList.remove('on');}
+function copyObs(){const txt=document.getElementById('obs-text').value;if(!txt){toast('Sin notas','err');return;}navigator.clipboard?.writeText(txt).then(()=>toast('Copiado','ok')).catch(()=>toast('Seleccioná el texto manualmente','info'));}
 
-// ── UPLOAD ──
-async function uploadFile(file,prefix){
-  const ext=file.name.split('.').pop().toLowerCase();
-  const name=`${prefix}${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
-  const res=await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${name}`,{
-    method:'POST',headers:{'Authorization':`Bearer ${SB_KEY}`,'Content-Type':file.type},body:file
-  });
-  if(!res.ok)throw new Error(await res.text());
-  return`${STORAGE}/${name}`;
-}
-
-// ── MODAL ──
+// ── OVERLAYS / MODAL ──
+function closeOverlayBg(e,id){if(e.target===document.getElementById(id))document.getElementById(id).classList.remove('on');}
+function showModal(title,body,cb){document.getElementById('modal-title').textContent=title;document.getElementById('modal-body').textContent=body;document.getElementById('modal-ok').onclick=()=>{closeModal();cb();};document.getElementById('modal').classList.add('on');}
 function closeModal(){document.getElementById('modal').classList.remove('on');}
 document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
 
 // ── TOAST ──
 let _tt;
-function toast(msg,type='info'){
-  const el=document.getElementById('toast');
-  el.textContent=msg;el.className='show '+{ok:'t-ok',err:'t-err',info:'t-info'}[type];
-  clearTimeout(_tt);_tt=setTimeout(()=>el.className='',3000);
-}
+function toast(msg,type='info'){const el=document.getElementById('toast');el.textContent=msg;el.className='show '+{ok:'t-ok',err:'t-err',info:'t-info'}[type];clearTimeout(_tt);_tt=setTimeout(()=>el.className='',3000);}
 
 // ── UTILS ──
 function uid(){return crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now();}
