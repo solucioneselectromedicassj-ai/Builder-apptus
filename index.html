@@ -970,7 +970,7 @@ function renderPrevSlide(){
   else if(tipo==='steps')html+=`<div style="font-size:19px;font-weight:700;margin-bottom:12px">${esc(s.titulo||s.title||'')}</div>${(s.steps||[]).map((st,j)=>`<div class="preview-step"><div class="preview-step-num">${j+1}</div><div style="font-size:14px;line-height:1.5">${esc(typeof st==='string'?st:st.text||'')}</div></div>`).join('')}`;
   else if(tipo==='checklist')html+=`<div style="font-size:19px;font-weight:700;margin-bottom:12px">${esc(s.titulo||s.title||'')}</div>${(s.items||[]).map(it=>`<div class="preview-check"><div class="preview-check-box"></div><div style="font-size:14px">${esc(it.text||it.label||'')}</div></div>`).join('')}`;
   else if(tipo==='video')html+=`<div style="font-size:19px;font-weight:700;margin-bottom:10px">${esc(s.titulo||s.title||'')}</div><div style="background:var(--s2);border-radius:8px;padding:20px;text-align:center;color:var(--accent);font-size:14px">▶ ${esc(s.video_url||s.url||'Sin URL')}</div>`;
-  else html+=`<div style="font-size:19px;font-weight:700;margin-bottom:10px">${esc(s.titulo||s.title||'')}</div><div style="font-size:14px;color:var(--t2);line-height:1.6;white-space:pre-wrap">${esc(s.cuerpo||s.msg||'')}</div>`;
+  else html+=`<div style="font-size:19px;font-weight:700;margin-bottom:10px">${esc(s.titulo||s.title||'')}</div><div style="font-size:14px;color:var(--t2);line-height:1.6;white-space:pre-wrap">${esc(s.cuerpo||s.msg||s.desc||s.sub||s.body||'')}</div>`;
   html+='</div>';
   area.innerHTML=html;
 }
