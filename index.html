@@ -169,6 +169,26 @@ select option{background:var(--s2);}
 hr{border:none;border-top:1px solid var(--border);margin:12px 0;}
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* PROMPTS */
+.prompt-cat-title{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;padding:12px 0 6px;}
+.prompt-card{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;overflow:hidden;}
+.prompt-card-body{padding:12px 14px;}
+.prompt-card-name{font-size:14px;font-weight:600;margin-bottom:4px;}
+.prompt-card-preview{font-size:12px;color:var(--t2);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.prompt-card-meta{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap;}
+.prompt-tipo{font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;}
+.pt-slides{background:#0d2a3a;color:var(--accent);}
+.pt-quiz{background:#2a1a0d;color:var(--warn);}
+.pt-resumen{background:#1a0d2a;color:#c084fc;}
+.pt-custom{background:var(--s3);color:var(--t2);}
+.prompt-actions{display:flex;border-top:1px solid var(--border);}
+.prompt-action{flex:1;padding:10px;font-size:12px;font-weight:600;border:none;background:none;cursor:pointer;font-family:var(--font);-webkit-tap-highlight-color:transparent;}
+.prompt-action:active{background:var(--s3);}
+.prompt-action+.prompt-action{border-left:1px solid var(--border);}
+.pa-copy{color:var(--accent);}
+.pa-edit{color:var(--t2);}
+
 </style>
 </head>
 <body>
@@ -190,7 +210,8 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0;}
 <div class="screen" id="s-list">
   <div class="topbar">
     <div style="flex:1"><div class="topbar-title">AppTus Builder</div><div style="font-size:11px;color:var(--t3)">Módulos de capacitación</div></div>
-    <button class="btn btn-ghost btn-sm" onclick="goTo('s-library')" style="font-size:12px">📚 Biblioteca</button>
+    <button class="btn btn-ghost btn-sm" onclick="goTo('s-prompts')" style="font-size:11px">✦ Prompts</button>
+    <button class="btn btn-ghost btn-sm" onclick="goTo('s-library')" style="font-size:12px">📚</button>
     <button class="back-btn" onclick="doLogout()" style="font-size:16px">↩</button>
   </div>
   <div class="search-wrap"><input type="text" id="search" placeholder="🔍  Buscar módulos…" oninput="filterList()"></div>
@@ -355,6 +376,53 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0;}
   <div class="fab-wrap"><label class="fab fab-primary" style="cursor:pointer" title="Subir imagen a la biblioteca">＋<input type="file" accept="image/*" style="display:none" onchange="addToLibrary(event)"></label></div>
 </div>
 
+
+<!-- PROMPTS -->
+<div class="screen" id="s-prompts">
+  <div class="topbar">
+    <button class="back-btn" onclick="goBack('s-list')">←</button>
+    <div class="topbar-title">✦ Prompts para Gemini</div>
+    <button class="btn btn-primary btn-sm" onclick="openNewPrompt()">＋ Nuevo</button>
+  </div>
+  <div class="search-wrap"><input type="text" id="prompt-search" placeholder="🔍  Buscar prompts…" oninput="filterPrompts()"></div>
+  <div class="screen-body" style="padding-bottom:80px" id="prompts-list"></div>
+</div>
+
+<!-- PROMPT EDITOR -->
+<div class="screen" id="s-prompt-edit">
+  <div class="topbar">
+    <button class="back-btn" onclick="goBack('s-prompts')">←</button>
+    <div class="topbar-title" id="pe-title">Editar prompt</div>
+    <button class="btn btn-primary btn-sm" onclick="savePrompt()">Guardar</button>
+  </div>
+  <div class="screen-body">
+    <div class="field"><label>Nombre del prompt</label><input type="text" id="pe-nombre" placeholder="ej: Slides — Monitor multiparamétrico"></div>
+    <div class="field"><label>Familia / Categoría</label>
+      <select id="pe-cat">
+        <option value="general">General (todos los equipos)</option>
+        <option value="monitores">Monitores multiparamétricos</option>
+        <option value="desfibriladores">Desfibriladores / Cardioversores</option>
+        <option value="ecg">Electrocardiógrafos</option>
+        <option value="bombas">Bombas de infusión</option>
+        <option value="oximetros">Oxímetros / Saturómetros</option>
+        <option value="higiene">Higiene y seguridad</option>
+        <option value="custom">Personalizado</option>
+      </select>
+    </div>
+    <div class="field"><label>Tipo</label>
+      <select id="pe-tipo">
+        <option value="slides">📋 Para generar slides</option>
+        <option value="quiz">❓ Para generar quiz</option>
+        <option value="resumen">⚡ Resumen / Referencia rápida</option>
+      </select>
+    </div>
+    <div class="field"><label>Texto del prompt</label>
+      <textarea id="pe-texto" style="min-height:260px;font-size:13px;line-height:1.6" placeholder="Escribí las instrucciones para Gemini…"></textarea>
+    </div>
+    <button class="btn btn-red btn-full" id="pe-del" onclick="deletePrompt()" style="display:none;margin-top:6px">🗑 Eliminar este prompt</button>
+  </div>
+</div>
+
 </div><!-- /root -->
 
 <!-- OBSERVATIONS -->
@@ -447,6 +515,8 @@ function goTo(id){
   document.getElementById(prev)?.classList.add('behind');
   document.getElementById(id)?.classList.add('active');
   screenStack.push(id);
+  if(id==='s-prompts')renderPrompts();
+  if(id==='s-library')renderLibrary();
 }
 function goBack(to){
   const cur=screenStack[screenStack.length-1];
@@ -1107,9 +1177,339 @@ document.getElementById('modal').addEventListener('click',e=>{if(e.target===docu
 let _tt;
 function toast(msg,type='info'){const el=document.getElementById('toast');el.textContent=msg;el.className='show '+{ok:'t-ok',err:'t-err',info:'t-info'}[type];clearTimeout(_tt);_tt=setTimeout(()=>el.className='',3000);}
 
+
+// ══════════════════════════════════════════
+// PROMPTS
+// ══════════════════════════════════════════
+const DEFAULT_PROMPTS = [
+  // ── GENERAL ──
+  {id:'g1',nombre:'Slides — Cualquier equipo biomédico',cat:'general',tipo:'slides',builtin:true,texto:`Tengo el manual del [NOMBRE Y MODELO DEL EQUIPO]. Organizá la siguiente información en secciones bien diferenciadas, con lenguaje simple para personal de salud no técnico:
+
+1. FUNCIÓN DEL EQUIPO: En 2-3 oraciones, para qué sirve y en qué contexto clínico se usa.
+
+2. PARTES PRINCIPALES: Lista cada parte física con su nombre y una descripción de máximo 10 palabras. (ej: Pantalla principal — Muestra los parámetros del paciente en tiempo real.)
+
+3. ANTES DE USAR — CHECKLIST: 5-8 ítems que el operador debe verificar antes de encender el equipo.
+
+4. PASOS DE OPERACIÓN: Procedimiento paso a paso desde encender hasta obtener el resultado. Máximo 10 pasos, numerados, lenguaje directo.
+
+5. ALERTAS Y ADVERTENCIAS: 3-5 situaciones críticas o cosas que NUNCA deben hacerse con este equipo.
+
+6. MANTENIMIENTO BÁSICO: Lo que puede hacer el operador (limpieza, verificación de accesorios, cambio de consumibles). No incluyas mantenimiento técnico especializado.
+
+Formato: texto plano, secciones separadas con el número y nombre en mayúsculas. Sin markdown. Sin asteriscos.`},
+
+  {id:'g2',nombre:'Quiz — Cualquier equipo (10 preguntas)',cat:'general',tipo:'quiz',builtin:true,texto:`Basándote en el manual del [NOMBRE Y MODELO DEL EQUIPO], generá 10 preguntas de opción múltiple para evaluar al personal de salud operador.
+
+Para cada pregunta usá exactamente este formato:
+P: [enunciado de la pregunta]
+A: [opción A]
+B: [opción B]
+C: [opción C]
+D: [opción D]
+CORRECTA: [letra]
+EXPLICACIÓN: [una oración explicando por qué es correcta]
+
+Criterios:
+- Dificultad media (operador de salud, no técnico biomédico)
+- Enfocate en: uso seguro, partes del equipo, pasos de operación, respuesta ante alarmas
+- Evitá preguntas de memoria de números exactos (voltajes, frecuencias técnicas)
+- Las opciones incorrectas deben ser plausibles, no absurdas`},
+
+  {id:'g3',nombre:'Referencia rápida — Tarjeta de bolsillo',cat:'general',tipo:'resumen',builtin:true,texto:`Necesito una tarjeta de referencia rápida para el [NOMBRE Y MODELO DEL EQUIPO]. Debe ser concisa, para que el operador la consulte en 30 segundos.
+
+Incluí SOLO esto:
+- PARA QUÉ SIRVE: 1 oración
+- ENCENDER Y CONFIGURAR: máximo 5 pasos
+- ALARMAS CRÍTICAS: las 3 más importantes y qué hacer
+- NUNCA HACER: 3 advertencias clave
+- LLAMAR AL TÉCNICO CUANDO: 3 situaciones
+
+Formato: muy breve, frases cortas. Sin explicaciones largas. Como una checklist rápida.`},
+
+  // ── MONITORES ──
+  {id:'m1',nombre:'Slides — Monitor multiparamétrico',cat:'monitores',tipo:'slides',builtin:true,texto:`Tengo el manual del monitor multiparamétrico [NOMBRE Y MODELO]. Extraé y organizá esta información:
+
+1. PARÁMETROS QUE MIDE: Lista cada parámetro (SpO2, ECG derivaciones, NIBP, Temperatura, EtCO2, etc.) con su rango de alarma por defecto según el manual.
+
+2. PANEL FRONTAL — PARTES: Nombre y función breve de cada sección: pantalla, botones principales, conectores de electrodos, sensor SpO2, manguito NIBP.
+
+3. CONEXIÓN DE SENSORES (paso a paso):
+   - Electrodos ECG (cantidad, colores, posición)
+   - Sensor de SpO2
+   - Manguito de NIBP
+   - Sensor de temperatura (si aplica)
+
+4. ENCENDIDO Y CONFIGURACIÓN INICIAL: Pasos desde conectar a la red hasta tener el monitor listo para un paciente nuevo.
+
+5. ALARMAS MÁS FRECUENTES: Las 6-8 alarmas más comunes, qué significa cada una y la acción correcta del operador.
+
+6. CUÁNDO LLAMAR AL SERVICIO TÉCNICO: Situaciones que el operador NO debe intentar resolver solo.
+
+Formato: texto plano, secciones numeradas. Sin markdown.`},
+
+  {id:'m2',nombre:'Quiz — Monitor multiparamétrico',cat:'monitores',tipo:'quiz',builtin:true,texto:`Generá 10 preguntas de opción múltiple sobre el monitor multiparamétrico [NOMBRE Y MODELO] para evaluar al personal de enfermería y médicos.
+
+Distribuí así:
+- 3 preguntas sobre conexión de sensores y electrodos
+- 3 preguntas sobre interpretación de alarmas y respuesta
+- 2 preguntas sobre configuración de parámetros y rangos
+- 2 preguntas sobre mantenimiento básico y limpieza
+
+Formato por pregunta:
+P: [pregunta]
+A: / B: / C: / D: [opciones]
+CORRECTA: [letra]
+EXPLICACIÓN: [una oración]`},
+
+  // ── DESFIBRILADORES ──
+  {id:'d1',nombre:'Slides — Desfibrilador / Cardioversor',cat:'desfibriladores',tipo:'slides',builtin:true,texto:`Tengo el manual del desfibrilador [NOMBRE Y MODELO]. Es un equipo crítico. Extraé con máximo detalle:
+
+1. MODOS DE OPERACIÓN disponibles en este modelo:
+   - DEA (Desfibrilador Externo Automático)
+   - Manual (selección de energía)
+   - Cardioversión sincronizada
+   Para cada modo: cuándo se usa y diferencia clave con los otros.
+
+2. PARTES DEL EQUIPO: Panel frontal, pantalla, paletas/electrodos parche, botones de carga y descarga, selector de energía, puerto USB/impresora.
+
+3. PROTOCOLO DEA — PASOS EXACTOS: Secuencia completa según este modelo específico, desde encender hasta la descarga.
+
+4. PROTOCOLO MANUAL — PASOS: Cómo seleccionar nivel de energía, cargar y descargar de forma manual.
+
+5. MANTENIMIENTO QUE HACE EL OPERADOR:
+   - Test diario/semanal (según el manual)
+   - Verificación de batería
+   - Verificación de electrodos/paletas
+   - Limpieza
+
+6. MENSAJES DE ERROR Y ALARMAS: Los más frecuentes y qué hacer.
+
+7. PRECAUCIONES DE SEGURIDAD CRÍTICAS: Lo que NUNCA debe hacerse (riesgo de vida).
+
+Formato: texto plano, secciones numeradas. Sin markdown.`},
+
+  {id:'d2',nombre:'Quiz — Desfibrilador / Cardioversor',cat:'desfibriladores',tipo:'quiz',builtin:true,texto:`Generá 10 preguntas sobre el desfibrilador [NOMBRE Y MODELO]. El personal evaluado es médicos y enfermería de emergencias.
+
+Distribuí:
+- 3 preguntas sobre cuándo usar cada modo (DEA, manual, cardioversión)
+- 3 preguntas sobre el protocolo de uso paso a paso
+- 2 preguntas sobre mantenimiento y verificación diaria
+- 2 preguntas sobre seguridad (qué NO hacer)
+
+Formato por pregunta:
+P: [pregunta]
+A: / B: / C: / D:
+CORRECTA: [letra]
+EXPLICACIÓN: [breve]`},
+
+  // ── ECG ──
+  {id:'e1',nombre:'Slides — Electrocardiógrafo',cat:'ecg',tipo:'slides',builtin:true,texto:`Tengo el manual del electrocardiógrafo [NOMBRE Y MODELO]. Organizá:
+
+1. PARTES DEL EQUIPO: Pantalla, teclado, puerto de impresión/USB/red, conector del cable de paciente.
+
+2. COLOCACIÓN DE ELECTRODOS — POSICIÓN EXACTA:
+   - 4 electrodos de extremidades (RA, LA, RL, LL) — posición y color según este manual
+   - 6 electrodos precordiales (V1 a V6) — posición anatómica exacta y color
+   Incluí una descripción clara de dónde va cada uno.
+
+3. PREPARACIÓN DEL PACIENTE: Pasos antes de colocar los electrodos (posición del paciente, preparación de piel, etc.).
+
+4. REGISTRO DEL ECG — PASOS COMPLETOS: Desde encender hasta obtener el trazado impreso o guardado.
+
+5. INGRESO DE DATOS DEL PACIENTE: Qué campos solicita el equipo y cuáles son obligatorios.
+
+6. PROBLEMAS DE REGISTRO Y SOLUCIONES:
+   - Artefactos por movimiento
+   - Interferencia eléctrica (60Hz)
+   - Electrodo suelto o mal contacto
+   - Traza plana
+   Para cada uno: causa y cómo corregirlo.
+
+Formato: texto plano, secciones numeradas.`},
+
+  {id:'e2',nombre:'Quiz — Electrocardiógrafo',cat:'ecg',tipo:'quiz',builtin:true,texto:`Generá 10 preguntas sobre el electrocardiógrafo [NOMBRE Y MODELO] para evaluar a técnicos, enfermería y médicos que lo operan.
+
+Distribuí:
+- 4 preguntas sobre colocación correcta de electrodos (posición, colores, errores comunes)
+- 3 preguntas sobre el procedimiento de registro paso a paso
+- 3 preguntas sobre resolución de problemas (artefactos, interferencia, traza plana)
+
+Formato:
+P: / A: / B: / C: / D: / CORRECTA: / EXPLICACIÓN:`},
+
+  // ── BOMBAS ──
+  {id:'b1',nombre:'Slides — Bomba de infusión',cat:'bombas',tipo:'slides',builtin:true,texto:`Tengo el manual de la bomba de infusión [NOMBRE Y MODELO]. Extraé:
+
+1. TIPOS DE INFUSIÓN disponibles: mL/h, volumen total + tiempo, dosis por peso (mcg/kg/min, etc.), modo KVO. Breve descripción de cada uno.
+
+2. PARTES DEL EQUIPO: Panel, pantalla, teclado, ranura del set, mecanismo de sujeción.
+
+3. CARGA DEL SET DE INFUSIÓN: Pasos exactos para cargar el equipo de infusión correctamente en la bomba (purga incluida).
+
+4. PROGRAMACIÓN BÁSICA (mL/h): Pasos desde encender hasta iniciar una infusión simple.
+
+5. ALARMAS MÁS FRECUENTES: Las 6-8 alarmas más comunes (oclusión, aire, fin de infusión, batería baja, etc.), qué significa cada una y cómo responder.
+
+6. PRECAUCIONES CRÍTICAS: Lo que nunca debe hacerse (seguridad del paciente).
+
+Formato: texto plano, secciones numeradas.`},
+
+  // ── HIGIENE ──
+  {id:'h1',nombre:'Slides — Protocolo de higiene de equipo',cat:'higiene',tipo:'slides',builtin:true,texto:`Necesito crear un módulo de higiene y desinfección para [NOMBRE DEL EQUIPO O "equipos biomédicos en general"].
+
+Organizá la información así:
+
+1. POR QUÉ ES IMPORTANTE: Riesgos de no higienizar correctamente los equipos (infecciones cruzadas, deterioro del equipo).
+
+2. NIVELES DE DESINFECCIÓN: Explicá brevemente la diferencia entre limpieza, desinfección de bajo nivel, medio nivel y alto nivel. A qué nivel corresponde este equipo.
+
+3. PRODUCTOS PERMITIDOS: Qué productos pueden usarse en este equipo y cuáles dañan el material (ej: no usar alcohol en pantallas táctiles, no sumergir en líquidos, etc.).
+
+4. PROCEDIMIENTO DE LIMPIEZA — PASOS: Secuencia completa incluyendo EPP necesario, materiales y frecuencia (después de cada uso / diaria / semanal).
+
+5. PARTES QUE REQUIEREN ATENCIÓN ESPECIAL: Cables, conectores, pantallas, teclados, etc.
+
+6. CHECKLIST DE VERIFICACIÓN: Lista de ítems para confirmar que el equipo quedó correctamente higienizado.
+
+Formato: texto plano, secciones numeradas.`}
+];
+
+let editingPromptId = null;
+
+function getCustomPrompts() {
+  try { return JSON.parse(localStorage.getItem('apptus_prompts') || '[]'); } catch { return []; }
+}
+function setCustomPrompts(p) { localStorage.setItem('apptus_prompts', JSON.stringify(p)); }
+
+function getAllPrompts() {
+  return [...DEFAULT_PROMPTS, ...getCustomPrompts()];
+}
+
+const CAT_LABELS = {
+  general:'General — Todos los equipos', monitores:'Monitores multiparamétricos',
+  desfibriladores:'Desfibriladores / Cardioversores', ecg:'Electrocardiógrafos',
+  bombas:'Bombas de infusión', oximetros:'Oxímetros', higiene:'Higiene y seguridad', custom:'Personalizados'
+};
+const TIPO_LABELS = { slides:'📋 Slides', quiz:'❓ Quiz', resumen:'⚡ Referencia rápida' };
+const TIPO_CLASS  = { slides:'pt-slides', quiz:'pt-quiz', resumen:'pt-resumen' };
+
+function renderPrompts(q = '') {
+  const all = getAllPrompts();
+  const lc = q.toLowerCase();
+  const filtered = all.filter(p =>
+    (p.nombre||'').toLowerCase().includes(lc) ||
+    (p.texto||'').toLowerCase().includes(lc) ||
+    CAT_LABELS[p.cat]?.toLowerCase().includes(lc)
+  );
+
+  // Group by category
+  const groups = {};
+  filtered.forEach(p => {
+    if (!groups[p.cat]) groups[p.cat] = [];
+    groups[p.cat].push(p);
+  });
+
+  const el = document.getElementById('prompts-list');
+  if (!filtered.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">✦</div><div style="font-size:13px">Sin prompts${q?' con ese término':''}</div></div>`;
+    return;
+  }
+
+  el.innerHTML = Object.entries(groups).map(([cat, prompts]) => `
+    <div class="prompt-cat-title">${CAT_LABELS[cat] || cat}</div>
+    ${prompts.map(p => `
+      <div class="prompt-card">
+        <div class="prompt-card-body">
+          <div class="prompt-card-name">${esc(p.nombre)}</div>
+          <div class="prompt-card-meta">
+            <span class="prompt-tipo ${TIPO_CLASS[p.tipo]||'pt-custom'}">${TIPO_LABELS[p.tipo]||p.tipo}</span>
+            ${p.builtin ? '' : '<span class="tag">personalizado</span>'}
+          </div>
+          <div class="prompt-card-preview" style="margin-top:6px">${esc(p.texto.slice(0,110))}</div>
+        </div>
+        <div class="prompt-actions">
+          <button class="prompt-action pa-copy" onclick="copyPrompt('${p.id}')">📋 Copiar</button>
+          <button class="prompt-action pa-edit" onclick="editPrompt('${p.id}')">${p.builtin ? '👁 Ver' : '✏ Editar'}</button>
+        </div>
+      </div>`).join('')}
+  `).join('');
+}
+
+function filterPrompts() { renderPrompts(document.getElementById('prompt-search').value); }
+
+function copyPrompt(id) {
+  const p = getAllPrompts().find(x => x.id === id);
+  if (!p) return;
+  navigator.clipboard?.writeText(p.texto)
+    .then(() => toast('✓ Prompt copiado — pegalo en Gemini', 'ok'))
+    .catch(() => toast('Seleccioná el texto manualmente', 'info'));
+}
+
+function openNewPrompt() {
+  editingPromptId = null;
+  document.getElementById('pe-title').textContent = 'Nuevo prompt';
+  document.getElementById('pe-nombre').value = '';
+  document.getElementById('pe-cat').value = 'custom';
+  document.getElementById('pe-tipo').value = 'slides';
+  document.getElementById('pe-texto').value = '';
+  document.getElementById('pe-del').style.display = 'none';
+  goTo('s-prompt-edit');
+}
+
+function editPrompt(id) {
+  const p = getAllPrompts().find(x => x.id === id);
+  if (!p) return;
+  editingPromptId = p.builtin ? null : id; // builtin = read-only
+  document.getElementById('pe-title').textContent = p.builtin ? 'Ver prompt' : 'Editar prompt';
+  document.getElementById('pe-nombre').value = p.nombre;
+  document.getElementById('pe-cat').value = p.cat;
+  document.getElementById('pe-tipo').value = p.tipo;
+  document.getElementById('pe-texto').value = p.texto;
+  document.getElementById('pe-del').style.display = p.builtin ? 'none' : 'block';
+  // Make read-only for builtin
+  ['pe-nombre','pe-cat','pe-tipo','pe-texto'].forEach(id => {
+    document.getElementById(id).disabled = !!p.builtin;
+  });
+  goTo('s-prompt-edit');
+}
+
+function savePrompt() {
+  const nombre = document.getElementById('pe-nombre').value.trim();
+  const texto  = document.getElementById('pe-texto').value.trim();
+  if (!nombre || !texto) { toast('Completá nombre y texto', 'err'); return; }
+
+  const custom = getCustomPrompts();
+  if (editingPromptId) {
+    const idx = custom.findIndex(p => p.id === editingPromptId);
+    if (idx >= 0) custom[idx] = { ...custom[idx], nombre, cat: document.getElementById('pe-cat').value, tipo: document.getElementById('pe-tipo').value, texto };
+  } else {
+    custom.unshift({ id: uid(), nombre, cat: document.getElementById('pe-cat').value, tipo: document.getElementById('pe-tipo').value, texto });
+  }
+  setCustomPrompts(custom);
+  renderPrompts();
+  goBack('s-prompts');
+  toast('Prompt guardado', 'ok');
+}
+
+function deletePrompt() {
+  if (!editingPromptId) return;
+  showModal('Eliminar prompt', '¿Eliminás este prompt personalizado?', () => {
+    const custom = getCustomPrompts().filter(p => p.id !== editingPromptId);
+    setCustomPrompts(custom);
+    renderPrompts();
+    goBack('s-prompts');
+    toast('Prompt eliminado', 'info');
+  });
+}
+
+// Init prompts when entering screen
+const origGoTo = goTo;
+
 // ── UTILS ──
 function uid(){return crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now();}
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 </script>
 </body>
 </html>
+<!-- THIS WILL BE REPLACED - just adding prompts screen before closing body -->
