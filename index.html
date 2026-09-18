@@ -218,7 +218,7 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0;}
   <div class="screen-body" id="mod-list" style="padding-bottom:80px">
     <div class="empty-state"><div class="empty-icon">⏳</div><div style="font-size:13px">Cargando…</div></div>
   </div>
-  <div class="fab-wrap"><button class="fab fab-primary" onclick="goTo('s-new')">＋</button></div>
+  <div class="fab-wrap"><button class="fab fab-primary" onclick="goTo('s-new');document.getElementById('new-icono-preview').innerHTML=familyIcon(document.getElementById('new-cat').value)">＋</button></div>
 </div>
 
 <!-- MODULE -->
@@ -234,12 +234,12 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0;}
     <div style="background:var(--s2);border-bottom:1px solid var(--border);padding:12px;">
       <div class="row2">
         <div class="field"><label>Nombre</label><input type="text" id="f-nombre" placeholder="Nombre del módulo" oninput="document.getElementById('mod-topbar-title').textContent=this.value||'Módulo'"></div>
-        <div class="field" style="flex:0 0 64px"><label>Ícono</label><input type="text" id="f-icono" placeholder="📋" style="text-align:center;font-size:20px"></div>
+        <div class="field" style="flex:0 0 64px"><label>Ícono</label><div id="f-icono-preview" style="text-align:center;font-size:24px;padding:8px 0;color:var(--t2)"></div></div>
       </div>
       <div class="row2">
         <div class="field"><label>Subtítulo / Equipo</label><input type="text" id="f-sub" placeholder="ej: Desfibrilador"></div>
         <div class="field"><label>Categoría</label>
-          <select id="f-cat">
+          <select id="f-cat" onchange="document.getElementById('f-icono-preview').innerHTML=familyIcon(this.value)">
             <option value="equipos">Equipos biomédicos</option>
             <option value="normas">Normas y estándares</option>
             <option value="higiene">Higiene y seguridad</option>
@@ -339,14 +339,14 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0;}
     <div class="field"><label>Subtítulo / Tipo de equipo</label><input type="text" id="new-sub" placeholder="ej: Monitor multiparamétrico"></div>
     <div class="row2">
       <div class="field"><label>Categoría</label>
-        <select id="new-cat">
+        <select id="new-cat" onchange="document.getElementById('new-icono-preview').innerHTML=familyIcon(this.value)">
           <option value="equipos">Equipos biomédicos</option>
           <option value="normas">Normas y estándares</option>
           <option value="higiene">Higiene y seguridad</option>
           <option value="empresa">Módulo empresa</option>
         </select>
       </div>
-      <div class="field" style="flex:0 0 90px"><label>Ícono emoji</label><input type="text" id="new-icono" placeholder="📋" style="text-align:center;font-size:20px"></div>
+      <div class="field" style="flex:0 0 90px"><label>Ícono</label><div id="new-icono-preview" style="text-align:center;font-size:24px;padding:8px 0;color:var(--t2)"></div></div>
     </div>
     <button class="btn btn-primary btn-full" style="margin-top:8px" onclick="createMod()">Crear módulo →</button>
   </div>
@@ -499,6 +499,18 @@ const STORAGE=`${SB_URL}/storage/v1/object/public/${BUCKET}`;
 const PASS='SEM2026super';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
 
+// ── ICONOS POR FAMILIA (mismo criterio que apptus/index.html) ──
+function familyIcon(cat){
+  const attrs='width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;display:inline-block"';
+  const defs={
+    equipos:`<svg ${attrs}><path d="M2.5 13h4l2 6 4-16 2 10 2-4h5"/></svg>`,
+    normas:`<svg ${attrs}><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>`,
+    higiene:`<svg ${attrs}><path d="M12 3l7 3v5c0 4.97-3.05 8.5-7 10-3.95-1.5-7-5.03-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>`,
+    empresa:`<svg ${attrs}><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 13h18"/></svg>`
+  };
+  return defs[cat]||`<svg ${attrs}><path d="M14.7 6.3a4 4 0 1 1-5.66 5.66L4 17v3h3l5.04-5.04a4 4 0 0 1 5.66-5.66l-2.83 2.83-2-2 2.83-2.83z"/></svg>`;
+}
+
 // ── STATE ──
 let mods=[],cur=null,slideIdx=null,qIdx=null,zonaIdx=null;
 let screenStack=['s-login'];
@@ -572,7 +584,7 @@ function renderList(q=''){
   if(!f.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">📭</div><div style="font-size:13px">${q?'Sin resultados':'Sin módulos todavía'}</div></div>`;return;}
   el.innerHTML=f.map(m=>`
     <div class="mod-card" onclick="selectMod('${m.id}')">
-      <div class="mod-icon">${m.icono||'📋'}</div>
+      <div class="mod-icon">${familyIcon(m.categoria||'equipos')}</div>
       <div class="mod-info">
         <div class="mod-name">${esc(m.nombre||'Sin nombre')}</div>
         ${m.sub?`<div class="mod-sub">${esc(m.sub)}</div>`:''}
@@ -594,7 +606,8 @@ async function selectMod(id){
 async function createMod(){
   const nombre=document.getElementById('new-nombre').value.trim();
   if(!nombre){toast('Escribí un nombre','err');return;}
-  const p={nombre,sub:document.getElementById('new-sub').value.trim(),categoria:document.getElementById('new-cat').value,icono:document.getElementById('new-icono').value.trim()||'📋',activo:false,mods:[],quiz:[],zonas:{imagen_base:'',hotspots:[]},created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+  const catNew=document.getElementById('new-cat').value;
+  const p={nombre,sub:document.getElementById('new-sub').value.trim(),categoria:catNew,icono:familyIcon(catNew),activo:false,mods:[],quiz:[],zonas:{imagen_base:'',hotspots:[]},created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
   const{data,error}=await sb.from('at_modulos').insert(p).select().single();
   if(error){toast('Error: '+error.message,'err');return;}
   cur={data,slides:[],quiz:[],zonas:{imagen_base:'',hotspots:[]}};
@@ -607,7 +620,7 @@ function openModScreen(){
   document.getElementById('f-nombre').value=d.nombre||'';
   document.getElementById('f-sub').value=d.sub||'';
   document.getElementById('f-cat').value=d.categoria||'equipos';
-  document.getElementById('f-icono').value=d.icono||'📋';
+  document.getElementById('f-icono-preview').innerHTML=familyIcon(d.categoria||'equipos');
   document.getElementById('mod-topbar-title').textContent=d.nombre||'Módulo';
   switchTab('slides');
   renderSlideCards();renderZonaTab();renderQuizCards();
@@ -618,7 +631,8 @@ function openModScreen(){
 async function saveMod(activo){
   const nombre=document.getElementById('f-nombre').value.trim();
   if(!nombre){toast('El módulo necesita un nombre','err');return;}
-  const p={nombre,sub:document.getElementById('f-sub').value.trim(),categoria:document.getElementById('f-cat').value,icono:document.getElementById('f-icono').value.trim()||'📋',activo,mods:buildModsPayload(),quiz:buildQuizPayload(),zonas:cur.zonas,updated_at:new Date().toISOString()};
+  const catF=document.getElementById('f-cat').value;
+  const p={nombre,sub:document.getElementById('f-sub').value.trim(),categoria:catF,icono:familyIcon(catF),activo,mods:buildModsPayload(),quiz:buildQuizPayload(),zonas:cur.zonas,updated_at:new Date().toISOString()};
   const{data,error}=cur.data.id
     ?await sb.from('at_modulos').update(p).eq('id',cur.data.id).select().single()
     :await sb.from('at_modulos').insert({...p,created_at:new Date().toISOString()}).select().single();
