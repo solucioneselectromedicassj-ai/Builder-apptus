@@ -2,7 +2,20 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0F1923">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AppTus Builder">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-touch-fullscreen" content="yes">
+<meta name="format-detection" content="telephone=no">
+<meta name="msapplication-tap-highlight" content="no">
+<link id="pwa-manifest" rel="manifest">
+<link rel="apple-touch-icon" href="">
 <title>AppTus Builder</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
@@ -510,6 +523,42 @@ function familyIcon(cat){
   };
   return defs[cat]||`<svg ${attrs}><path d="M14.7 6.3a4 4 0 1 1-5.66 5.66L4 17v3h3l5.04-5.04a4 4 0 0 1 5.66-5.66l-2.83 2.83-2-2 2.83-2.83z"/></svg>`;
 }
+
+// ── ICONO DE APP (PWA) — instalable, para no abrirla siempre desde Chrome ──
+function makeAppIcon(sz){
+  const c=document.createElement('canvas');c.width=c.height=sz;
+  const x=c.getContext('2d');if(!x)return null;
+  const r=sz*0.18;
+  x.beginPath();x.moveTo(r,0);x.lineTo(sz-r,0);x.quadraticCurveTo(sz,0,sz,r);
+  x.lineTo(sz,sz-r);x.quadraticCurveTo(sz,sz,sz-r,sz);
+  x.lineTo(r,sz);x.quadraticCurveTo(0,sz,0,sz-r);
+  x.lineTo(0,r);x.quadraticCurveTo(0,0,r,0);x.closePath();
+  x.fillStyle='#0F1923';x.fill();
+  x.fillStyle='#2DD4BF';
+  x.font=`700 ${sz*0.56}px system-ui,-apple-system,'Segoe UI',sans-serif`;
+  x.textAlign='center';x.textBaseline='middle';
+  x.fillText('B',sz/2,sz*0.56);
+  return c.toDataURL('image/png');
+}
+try{
+  const icon192=makeAppIcon(192),icon512=makeAppIcon(512);
+  const icons=[];
+  if(icon192)icons.push({src:icon192,sizes:'192x192',type:'image/png',purpose:'any maskable'});
+  if(icon512)icons.push({src:icon512,sizes:'512x512',type:'image/png',purpose:'any maskable'});
+  const mf={name:'AppTus Builder',short_name:'AppTus Builder',
+    description:'Editor de modulos de AppTus',
+    start_url:'./',display:'standalone',orientation:'portrait',
+    theme_color:'#0F1923',background_color:'#0F1923',
+    icons,screenshots:[],categories:['business','productivity']};
+  const mfBlob=new Blob([JSON.stringify(mf)],{type:'application/manifest+json'});
+  document.getElementById('pwa-manifest').href=URL.createObjectURL(mfBlob);
+  if(icon192){
+    const al=document.querySelector('link[rel="apple-touch-icon"]');
+    if(al)al.href=icon192;
+    const fi=document.createElement('link');fi.rel='icon';fi.href=icon192;
+    document.head.appendChild(fi);
+  }
+}catch(e){}
 
 // ── STATE ──
 let mods=[],cur=null,slideIdx=null,qIdx=null,zonaIdx=null;
