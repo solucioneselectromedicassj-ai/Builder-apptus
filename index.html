@@ -595,11 +595,32 @@ function renderList(q=''){
 }
 function filterList(){renderList(document.getElementById('search').value);}
 
+// Marks the last slide of each section (topic) as "sectionEnd" and attaches
+// that section's questions, so multi-section legacy modules (and modules
+// saved here before) keep their section breaks when reopened for editing.
+function applySectionBreaks(slides,rawMods,rawMq){
+  if(!rawMods||!Array.isArray(rawMods)||rawMods.length<2)return slides;
+  var pos=0;
+  rawMods.forEach(function(topic,ti){
+    var n=(topic.slides||[]).length;
+    if(n===0)return;
+    var lastIdx=pos+n-1;
+    if(slides[lastIdx]){
+      slides[lastIdx].sectionEnd=true;
+      var qs=(rawMq&&(rawMq[ti]||rawMq[String(ti)]))||[];
+      slides[lastIdx].sectionQuiz=qs.map(function(q){return{id:uid(),pregunta:q.q||q.pregunta||'',opciones:q.ops||q.opciones||['','','',''],correcta:typeof q.ans==='number'?q.ans:(q.correcta||0),explicacion:q.exp||q.explicacion||''};});
+    }
+    pos+=n;
+  });
+  return slides;
+}
 async function selectMod(id){
   toast('Abriendo…','info');
   const{data,error}=await sb.from('at_modulos').select('*').eq('id',id).single();
   if(error){toast('Error: '+error.message,'err');return;}
-  cur={data,slides:parseMods(data.mods),quiz:parseQuiz(data.quiz),zonas:parseZonas(data.zonas)};
+  const slides=parseMods(data.mods);
+  applySectionBreaks(slides,data.mods,data.mq);
+  cur={data,slides,quiz:parseQuiz(data.quiz),zonas:parseZonas(data.zonas)};
   slideIdx=null;qIdx=null;zonaIdx=null;
   openModScreen();
 }
@@ -607,7 +628,7 @@ async function createMod(){
   const nombre=document.getElementById('new-nombre').value.trim();
   if(!nombre){toast('Escribí un nombre','err');return;}
   const catNew=document.getElementById('new-cat').value;
-  const p={nombre,sub:document.getElementById('new-sub').value.trim(),categoria:catNew,icono:familyIcon(catNew),activo:false,mods:[],quiz:[],zonas:{imagen_base:'',hotspots:[]},created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+  const p={nombre,sub:document.getElementById('new-sub').value.trim(),categoria:catNew,icono:familyIcon(catNew),activo:false,mods:[],quiz:[],mq:{},zonas:{imagen_base:'',hotspots:[]},created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
   const{data,error}=await sb.from('at_modulos').insert(p).select().single();
   if(error){toast('Error: '+error.message,'err');return;}
   cur={data,slides:[],quiz:[],zonas:{imagen_base:'',hotspots:[]}};
@@ -632,7 +653,7 @@ async function saveMod(activo){
   const nombre=document.getElementById('f-nombre').value.trim();
   if(!nombre){toast('El módulo necesita un nombre','err');return;}
   const catF=document.getElementById('f-cat').value;
-  const p={nombre,sub:document.getElementById('f-sub').value.trim(),categoria:catF,icono:familyIcon(catF),activo,mods:buildModsPayload(),quiz:buildQuizPayload(),zonas:cur.zonas,updated_at:new Date().toISOString()};
+  const p={nombre,sub:document.getElementById('f-sub').value.trim(),categoria:catF,icono:familyIcon(catF),activo,mods:buildModsPayload(),quiz:buildQuizPayload(),mq:buildMqPayload(),zonas:cur.zonas,updated_at:new Date().toISOString()};
   const{data,error}=cur.data.id
     ?await sb.from('at_modulos').update(p).eq('id',cur.data.id).select().single()
     :await sb.from('at_modulos').insert({...p,created_at:new Date().toISOString()}).select().single();
@@ -645,7 +666,29 @@ async function saveMod(activo){
   if(cur.zonas.imagen_base)saveZonaToLibrary(cur.zonas,data.nombre);
   toast(activo?'✓ Módulo publicado':'Borrador guardado','ok');
 }
-function buildModsPayload(){if(!cur.slides.length)return[];return[{id:0,title:document.getElementById('f-nombre').value.trim(),slides:cur.slides}];}
+// Splits the flat slide list into sections at each slide marked "sectionEnd".
+// One section (no breaks) keeps the old shape: a single topic named after the module.
+function buildModsPayload(){
+  if(!cur.slides.length)return[];
+  const nombre=document.getElementById('f-nombre').value.trim();
+  const sections=[];let acc=[];
+  cur.slides.forEach(s=>{acc.push(s);if(s.sectionEnd){sections.push(acc);acc=[];}});
+  if(acc.length)sections.push(acc);
+  if(sections.length<=1)return[{id:0,title:nombre,slides:cur.slides}];
+  return sections.map((slides,i)=>({id:i,title:`Sección ${i+1}`,slides}));
+}
+// Per-section evaluation questions, keyed by section index (0-based, same order
+// as buildModsPayload's sections) — read by apptus to gate advancing between sections.
+function buildMqPayload(){
+  const mq={};let secIdx=0;
+  cur.slides.forEach(s=>{
+    if(s.sectionEnd){
+      if(s.sectionQuiz&&s.sectionQuiz.length)mq[secIdx]=s.sectionQuiz.map(q=>({q:q.pregunta,ops:q.opciones,ans:q.correcta,exp:q.explicacion||''}));
+      secIdx++;
+    }
+  });
+  return mq;
+}
 function buildQuizPayload(){return cur.quiz.map(q=>({q:q.pregunta,ops:q.opciones,ans:q.correcta,exp:q.explicacion||''}));}
 
 // ── TABS ──
@@ -696,6 +739,7 @@ function renderSlideCards(){
         </div>
         <div class="item-title">${esc(s.titulo||s.title||'Sin título')}</div>
         ${slidePreviewHTML(s)}
+        ${s.sectionEnd?`<div style="font-size:10px;background:var(--s3);color:var(--accent);padding:2px 7px;border-radius:4px;font-weight:600;display:inline-block;margin-top:4px">🏁 Fin de sección · ${(s.sectionQuiz||[]).length} preguntas</div>`:''}
       </div>
       <div class="item-actions">
         <button class="item-action ia-edit" onclick="editSlide(${i})">✏ Editar</button>
@@ -748,9 +792,65 @@ function renderSlideBody(i){
     ${tipo==='video'?`<div class="field"><label>URL del video</label><input type="text" id="se-video" value="${esc(s.video_url||s.url||'')}" placeholder="https://youtube.com/…"></div>`:''}
     ${usesItems?renderItemsEd(i,s):''}
     ${usesSteps?renderStepsEd(i,s):''}
+    <div class="field" style="display:flex;align-items:center;gap:8px;margin-top:10px">
+      <input type="checkbox" id="se-sectionend" ${s.sectionEnd?'checked':''} onchange="toggleSectionEnd(${i},this.checked)" style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer;flex-shrink:0">
+      <label style="margin:0;cursor:pointer" onclick="document.getElementById('se-sectionend').click()">Fin de sección — evaluación antes de seguir</label>
+    </div>
+    ${s.sectionEnd?renderSectionQuizEd(i,s):''}
     <div style="height:14px"></div>
     <button class="btn btn-red btn-full" onclick="confirmDelSlide(${i});goBack('s-module')">🗑 Eliminar slide</button>`;
 }
+function toggleSectionEnd(i,val){
+  cur.slides[i].sectionEnd=val;
+  if(val&&!cur.slides[i].sectionQuiz)cur.slides[i].sectionQuiz=[];
+  renderSlideBody(i);
+}
+function renderSectionQuizEd(i,s){
+  const qs=s.sectionQuiz||[];
+  return `<div class="field" style="background:var(--s2);border-radius:10px;padding:10px;margin-top:2px">
+    <label>Preguntas de esta sección</label>
+    ${qs.length?qs.map((q,qi)=>`
+      <div class="item-card" style="margin-bottom:6px">
+        <div class="item-card-body"><div class="item-title" style="font-size:13px">${esc(q.pregunta||'Sin pregunta')}</div></div>
+        <div class="item-actions">
+          <button class="item-action ia-edit" onclick="editSectionQ(${i},${qi})">✏</button>
+          <button class="item-action ia-del" onclick="delSectionQ(${i},${qi})">🗑</button>
+        </div>
+      </div>`).join(''):`<div style="font-size:12px;color:var(--t3);padding:6px 0">Sin preguntas todavía. Sin preguntas, esta sección no bloquea el avance.</div>`}
+    <button class="btn btn-ghost btn-sm" onclick="addSectionQ(${i})">＋ Pregunta</button>
+  </div>`;
+}
+let sectionQCtx=null;
+function addSectionQ(i){
+  cur.slides[i].sectionQuiz=cur.slides[i].sectionQuiz||[];
+  cur.slides[i].sectionQuiz.push({id:uid(),pregunta:'',opciones:['','','',''],correcta:0,explicacion:''});
+  editSectionQ(i,cur.slides[i].sectionQuiz.length-1);
+}
+function delSectionQ(i,qi){cur.slides[i].sectionQuiz.splice(qi,1);renderSlideBody(i);}
+function editSectionQ(i,qi){
+  sectionQCtx={slideIdx:i,qIdx:qi};
+  document.getElementById('quiz-topbar-title').textContent=`Pregunta de sección ${qi+1}`;
+  renderSectionQBody(i,qi);
+  goTo('s-quiz');
+}
+function renderSectionQBody(i,qi){
+  const q=cur.slides[i].sectionQuiz[qi];const opts=q.opciones||['','','',''];
+  document.getElementById('quiz-body').innerHTML=`
+    <div class="field"><label>Enunciado</label><textarea style="min-height:100px" placeholder="¿Cuál es…?" oninput="cur.slides[${i}].sectionQuiz[${qi}].pregunta=this.value">${esc(q.pregunta||'')}</textarea></div>
+    <div class="field"><label>Opciones — marcá la correcta ✓</label>
+      ${opts.map((o,oi)=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">
+        <input type="radio" name="sqr${i}_${qi}" style="accent-color:var(--accent);width:18px;height:18px;flex-shrink:0;cursor:pointer" ${q.correcta===oi?'checked':''} onchange="cur.slides[${i}].sectionQuiz[${qi}].correcta=${oi}">
+        <input type="text" value="${esc(o)}" placeholder="Opción ${oi+1}" style="flex:1" oninput="cur.slides[${i}].sectionQuiz[${qi}].opciones[${oi}]=this.value">
+        ${opts.length>2?`<button class="btn btn-red btn-sm" onclick="delSectionOpt(${i},${qi},${oi})" style="padding:6px 10px;flex-shrink:0">✕</button>`:''}
+      </div>`).join('')}
+      ${opts.length<6?`<button class="btn btn-ghost btn-sm" onclick="addSectionOpt(${i},${qi})">＋ Opción</button>`:''}
+    </div>
+    <div class="field"><label>Explicación (opcional)</label><textarea style="min-height:60px" oninput="cur.slides[${i}].sectionQuiz[${qi}].explicacion=this.value">${esc(q.explicacion||'')}</textarea></div>
+    <div style="height:10px"></div>
+    <button class="btn btn-red btn-full" onclick="delSectionQ(${i},${qi});goBack('s-slide')">🗑 Eliminar pregunta</button>`;
+}
+function addSectionOpt(i,qi){cur.slides[i].sectionQuiz[qi].opciones.push('');renderSectionQBody(i,qi);}
+function delSectionOpt(i,qi,oi){const q=cur.slides[i].sectionQuiz[qi];q.opciones.splice(oi,1);if(q.correcta>=q.opciones.length)q.correcta=0;renderSectionQBody(i,qi);}
 
 function renderItemsEd(i,s){
   const items=s.items||[];const isCards=(s.tipo||s.type)==='cards';
@@ -1018,7 +1118,14 @@ function renderQBody(i){
     <div style="height:10px"></div>
     <button class="btn btn-red btn-full" onclick="confirmDelQ(${i});goBack('s-module')">🗑 Eliminar pregunta</button>`;
 }
-function saveQBack(){renderQuizCards();goBack('s-module');}
+function saveQBack(){
+  if(sectionQCtx){
+    const i=sectionQCtx.slideIdx;sectionQCtx=null;
+    renderSlideBody(i);goBack('s-slide');
+  }else{
+    renderQuizCards();goBack('s-module');
+  }
+}
 function addOpt(i){cur.quiz[i].opciones.push('');renderQBody(i);}
 function delOpt(i,oi){const q=cur.quiz[i];q.opciones.splice(oi,1);if(q.correcta>=q.opciones.length)q.correcta=0;renderQBody(i);}
 function confirmDelQ(i){showModal('Eliminar pregunta',`¿Eliminás la pregunta ${i+1}?`,()=>{cur.quiz.splice(i,1);renderQuizCards();});}
