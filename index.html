@@ -237,7 +237,7 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0;}
 <!-- MODULE -->
 <div class="screen" id="s-module">
   <div class="topbar">
-    <button class="back-btn" onclick="goBack('s-list')">←</button>
+    <button class="back-btn" onclick="exitModule()">←</button>
     <div id="mod-topbar-title" class="topbar-title">Módulo</div>
     <button class="btn btn-ghost btn-sm" onclick="openPreview()" style="font-size:13px">👁</button>
     <button class="btn btn-ghost btn-sm" onclick="saveMod(false)" style="font-size:12px">Borrador</button>
@@ -569,6 +569,14 @@ let drawMode=false,drawStart=null,drawCurrent=null;
 // Pending interactive image
 let pendingImg={url:'',slideIdx:null};
 
+// Ultima linea de defensa: si cierran la pestana o recargan con el editor de
+// modulo abierto, avisa antes de perder lo que no se guardo todavia.
+window.addEventListener('beforeunload',function(e){
+  const nombre=(document.getElementById('f-nombre')?.value||'').trim();
+  const editorAbierto=document.getElementById('s-module')?.classList.contains('active');
+  if(cur&&nombre&&editorAbierto){e.preventDefault();e.returnValue='';}
+});
+
 // ── NAV ──
 function goTo(id){
   const prev=screenStack[screenStack.length-1];
@@ -698,22 +706,40 @@ function openModScreen(){
 }
 
 // ── SAVE ──
-async function saveMod(activo){
+// Actually writes to Supabase. Shared by the explicit save buttons and by
+// exitModule(), so leaving the editor never silently discards work in cur.
+async function persistMod(activo){
   const nombre=document.getElementById('f-nombre').value.trim();
-  if(!nombre){toast('El módulo necesita un nombre','err');return;}
+  if(!nombre)return{ok:false,error:'sin-nombre'};
   const catF=document.getElementById('f-cat').value;
   const p={nombre,sub:document.getElementById('f-sub').value.trim(),categoria:catF,icono:familyIcon(catF),activo,mods:buildModsPayload(),quiz:buildQuizPayload(),mq:buildMqPayload(),zonas:cur.zonas,updated_at:new Date().toISOString()};
   const{data,error}=cur.data.id
     ?await sb.from('at_modulos').update(p).eq('id',cur.data.id).select().single()
     :await sb.from('at_modulos').insert({...p,created_at:new Date().toISOString()}).select().single();
-  if(error){toast('Error: '+error.message,'err');return;}
+  if(error)return{ok:false,error:error.message};
   cur.data=data;
   const idx=mods.findIndex(m=>m.id===data.id);
   if(idx>=0)mods[idx]={...mods[idx],...data};else mods.unshift(data);
-  renderList();document.getElementById('mod-topbar-title').textContent=data.nombre;
-  // Auto-save zona to library
   if(cur.zonas.imagen_base)saveZonaToLibrary(cur.zonas,data.nombre);
+  return{ok:true,data};
+}
+async function saveMod(activo){
+  const res=await persistMod(activo);
+  if(!res.ok){toast(res.error==='sin-nombre'?'El módulo necesita un nombre':'Error: '+res.error,'err');return;}
+  renderList();document.getElementById('mod-topbar-title').textContent=res.data.nombre;
   toast(activo?'✓ Módulo publicado':'Borrador guardado','ok');
+}
+// Back button on the module editor: auto-guarda como borrador (o mantiene el
+// estado publicado que ya tenia) antes de salir, para no perder el trabajo si
+// el usuario se olvido de tocar "Borrador"/"Pub." antes de salir del modulo.
+async function exitModule(){
+  const nombre=(document.getElementById('f-nombre')?.value||'').trim();
+  if(!cur||!cur.data||!nombre){goBack('s-list');return;}
+  toast('Guardando…','info');
+  const res=await persistMod(cur.data.activo===true);
+  if(res.ok){renderList();toast('✓ Guardado','ok');}
+  else{toast('No se pudo guardar: '+res.error,'err');}
+  goBack('s-list');
 }
 // Splits the flat slide list into sections at each slide marked "sectionEnd".
 // One section (no breaks) keeps the old shape: a single topic named after the module.
@@ -967,46 +993,81 @@ function parsePaste(){
   toast(`✓ ${slides.length} slides creados`,'ok');
 }
 
-function textToSlides(text){
-  const slides=[];
-  // Split into paragraphs (blank line = new section)
-  const paras=text.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean);
+// Detecta encabezados de seccion tipo "1. NOMBRE EN MAYUSCULAS" (el formato que
+// nuestros propios templates de prompt le piden a Gemini) y corta un slide por
+// cada uno, sin depender de que haya lineas en blanco entre secciones — el
+// pegado desde el chat de Gemini muchas veces las colapsa y todo termina en un
+// solo bloque de texto.
+const HEADING_RE=/^\s*\d+[\.\)]\s+([A-ZÁÉÍÓÚÑÜ][A-ZÁÉÍÓÚÑÜ0-9 \/\-]{1,70})\s*:?\s*(.*)$/;
 
+function textToSlides(text){
+  const rawLines=text.split('\n');
+  const headingSections=[];let cur0=null;
+  rawLines.forEach(line=>{
+    const m=line.match(HEADING_RE);
+    if(m){cur0={title:m[1].trim().replace(/\s+/g,' '),lines:m[2].trim()?[m[2].trim()]:[]};headingSections.push(cur0);}
+    else if(cur0)cur0.lines.push(line);
+  });
+  if(headingSections.filter(s=>s.title).length>=2){
+    return headingSections.map(s=>bodyToSlide(s.title,s.lines)).filter(Boolean);
+  }
+  // Sin encabezados numerados detectables: separar por parrafos (linea en blanco = corte)
+  const paras=text.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean);
+  const slides=[];
   paras.forEach(para=>{
     const lines=para.split('\n').map(l=>l.trim()).filter(Boolean);
     if(!lines.length)return;
-
-    // AVISO / NOTICE: starts with keywords or emoji warnings
-    if(/^(importante|atención|atencion|advertencia|warning|precaución|precaucion|nota:|🔴|🟡|⚠|❗|💡|🚨)/i.test(lines[0])){
-      slides.push({id:uid(),tipo:'notice',type:'notice',titulo:lines[0],title:lines[0],cuerpo:lines.slice(1).join('\n'),msg:lines.slice(1).join('\n'),items:[],steps:[]});
-      return;
-    }
-
-    // PASOS NUMERADOS: múltiples líneas con "1. " "2. " etc
-    const numbered=lines.filter(l=>/^\d+[\.\)]\s/.test(l));
-    if(numbered.length>=2&&numbered.length===lines.length-1||numbered.length===lines.length){
-      const title=numbered.length<lines.length?lines[0]:'';
-      const steps=numbered.map(l=>l.replace(/^\d+[\.\)]\s+/,''));
-      slides.push({id:uid(),tipo:'steps',type:'steps',titulo:title||'Procedimiento',title:title||'Procedimiento',cuerpo:'',msg:'',items:[],steps});
-      return;
-    }
-
-    // LISTA / CHECKLIST: múltiples líneas con guiones o viñetas
-    const bulleted=lines.filter(l=>/^[-•*·]\s/.test(l));
-    if(bulleted.length>=2&&bulleted.length>=lines.length-1){
-      const title=bulleted.length<lines.length?lines[0]:'';
-      const items=bulleted.map(l=>({id:uid(),text:l.replace(/^[-•*·]\s+/,''),label:l.replace(/^[-•*·]\s+/,''),icon:'',desc:''}));
-      slides.push({id:uid(),tipo:'checklist',type:'checklist',titulo:title||'Lista',title:title||'Lista',cuerpo:'',msg:'',items,steps:[]});
-      return;
-    }
-
-    // TEXTO: título corto + párrafo largo, o párrafo solo
-    const isTitle=lines[0].length<70&&!lines[0].endsWith('.');
-    const title=isTitle?lines[0]:'';
-    const body=isTitle?lines.slice(1).join('\n'):lines.join('\n');
-    slides.push({id:uid(),tipo:'texto',type:'texto',titulo:title,title,cuerpo:body,msg:body,imagen_url:'',video_url:'',items:[],steps:[]});
+    const looksLikeTitle=lines.length>1&&lines[0].length<70&&!lines[0].endsWith('.')&&!/^[-•*·]\s/.test(lines[0])&&!/^\d+[\.\)]\s/.test(lines[0]);
+    const title=looksLikeTitle?lines[0]:'';
+    const body=looksLikeTitle?lines.slice(1):lines;
+    const slide=bodyToSlide(title,body);
+    if(slide)slides.push(slide);
   });
   return slides;
+}
+
+// Clasifica el cuerpo de una seccion (ya separado de su titulo) en el tipo de
+// slide que mejor le queda: aviso, pasos, checklist, tarjetas (partes del
+// equipo) o texto simple.
+function bodyToSlide(title,bodyLines){
+  const lines=bodyLines.map(l=>l.trim()).filter(Boolean);
+  if(!lines.length&&!title)return null;
+
+  const firstForNotice=title||lines[0]||'';
+  if(/^(importante|atención|atencion|advertencia|warning|precaución|precaucion|nota:|🔴|🟡|⚠|❗|💡|🚨)/i.test(firstForNotice)){
+    const body=title?lines:lines.slice(1);
+    return{id:uid(),tipo:'notice',type:'notice',titulo:title||lines[0],title:title||lines[0],cuerpo:body.join('\n'),msg:body.join('\n'),items:[],steps:[]};
+  }
+
+  // PASOS NUMERADOS: "1. " "2. " etc, uno por linea
+  const numbered=lines.filter(l=>/^\d+[\.\)]\s/.test(l));
+  if(numbered.length>=2&&numbered.length>=lines.length-1){
+    const stepTitle=title||(numbered.length<lines.length?lines[0]:'')||'Procedimiento';
+    const steps=numbered.map(l=>l.replace(/^\d+[\.\)]\s+/,''));
+    return{id:uid(),tipo:'steps',type:'steps',titulo:stepTitle,title:stepTitle,cuerpo:'',msg:'',items:[],steps};
+  }
+
+  // LISTA / CHECKLIST: guiones o vinetas
+  const bulleted=lines.filter(l=>/^[-•*·]\s/.test(l));
+  if(bulleted.length>=2&&bulleted.length>=lines.length-1){
+    const listTitle=title||(bulleted.length<lines.length?lines[0]:'')||'Lista';
+    const items=bulleted.map(l=>({id:uid(),text:l.replace(/^[-•*·]\s+/,''),label:l.replace(/^[-•*·]\s+/,''),icon:'',desc:''}));
+    return{id:uid(),tipo:'checklist',type:'checklist',titulo:listTitle,title:listTitle,cuerpo:'',msg:'',items,steps:[]};
+  }
+
+  // PARTES DEL EQUIPO: varias lineas "Nombre — descripcion" o "Nombre: descripcion"
+  const dashPairs=lines.filter(l=>/^.{2,50}\s[—-]\s.+/.test(l)||/^[^:]{2,50}:\s+.+/.test(l));
+  if(lines.length>=2&&dashPairs.length===lines.length){
+    const cardsTitle=title||'Partes';
+    const items=lines.map(l=>{
+      const m=l.match(/^(.*?)\s*[—:-]\s+(.+)$/);
+      return m?{id:uid(),t:m[1].trim(),label:m[1].trim(),d:m[2].trim(),desc:m[2].trim(),icon:''}:{id:uid(),t:l,label:l,d:'',desc:'',icon:''};
+    });
+    return{id:uid(),tipo:'cards',type:'cards',titulo:cardsTitle,title:cardsTitle,cuerpo:'',msg:'',items,steps:[]};
+  }
+
+  // TEXTO simple
+  return{id:uid(),tipo:'texto',type:'texto',titulo:title,title,cuerpo:lines.join('\n'),msg:lines.join('\n'),imagen_url:'',video_url:'',items:[],steps:[]};
 }
 
 // ══════════════════════════════════════════
