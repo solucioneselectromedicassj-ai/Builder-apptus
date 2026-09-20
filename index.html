@@ -795,9 +795,7 @@ function slidePreviewHTML(s){
   const img=s.imagen_url||s.img||'';
   if(img)lines.push(`<img src="${img}" style="width:100%;max-height:100px;object-fit:cover;border-radius:6px;margin-top:6px">`);
   const items=s.items||[];
-  if(items.length){const shown=items.slice(0,3).map(it=>`<div style="font-size:11px;color:var(--t2);padding:2px 0;border-bottom:1px solid var(--border)">${it.icon?it.icon+' ':''}${esc(it.label||it.text||'')}</div>`).join('');lines.push(`<div style="margin-top:6px">${shown}${items.length>3?`<div style="font-size:10px;color:var(--t3)">+${items.length-3} más…</div>`:''}</div>`);}
-  const steps=s.steps||[];
-  if(steps.length){const shown=steps.slice(0,3).map((st,j)=>`<div style="font-size:11px;color:var(--t2);padding:2px 0"><span style="color:var(--accent);font-weight:700">${j+1}.</span> ${esc((typeof st==='string'?st:st.text||'').slice(0,50))}</div>`).join('');lines.push(`<div style="margin-top:6px">${shown}${steps.length>3?`<div style="font-size:10px;color:var(--t3)">+${steps.length-3} más…</div>`:''}</div>`);}
+  if(items.length){const shown=items.slice(0,3).map((it,j)=>{if(typeof it==='string')return`<div style="font-size:11px;color:var(--t2);padding:2px 0;border-bottom:1px solid var(--border)">${esc(it)}</div>`;const prefix=(s.tipo||s.type)==='steps'?(j+1)+'. ':(it.icon||it.ic?(it.icon||it.ic)+' ':'');return`<div style="font-size:11px;color:var(--t2);padding:2px 0;border-bottom:1px solid var(--border)">${prefix}${esc(it.label||it.text||it.t||'')}</div>`;}).join('');lines.push(`<div style="margin-top:6px">${shown}${items.length>3?`<div style="font-size:10px;color:var(--t3)">+${items.length-3} más…</div>`:''}</div>`);}
   if(s.video_url||s.url)lines.push(`<div style="font-size:11px;color:var(--accent);margin-top:5px">▶ ${esc((s.video_url||s.url||'').slice(0,50))}</div>`);
   return lines.join('')||'<div style="font-size:11px;color:var(--t3);margin-top:4px">Sin contenido</div>';
 }
@@ -958,16 +956,29 @@ function renderItemsEd(i,s){
   return`<div class="field"><label>${isCards?'Tarjetas':'Ítems'} (${items.length})</label>${rows}<button class="btn btn-ghost btn-full btn-sm" onclick="addItem(${i})">＋ Agregar ${isCards?'tarjeta':'ítem'}</button></div>`;
 }
 function renderStepsEd(i,s){
-  const steps=s.steps||[];
-  const rows=steps.map((st,j)=>{const txt=typeof st==='string'?st:(st.text||'');return`<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px"><div style="width:26px;height:26px;border-radius:50%;background:var(--accent);color:#0F1923;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:8px">${j+1}</div><textarea style="flex:1;min-height:60px;font-size:13px" placeholder="Descripción del paso…" oninput="cur.slides[${i}].steps[${j}]=this.value">${esc(txt)}</textarea><button class="btn btn-red btn-sm" onclick="delStep(${i},${j})" style="padding:6px 10px;margin-top:8px;flex-shrink:0">✕</button></div>`;}).join('');
-  return`<div class="field"><label>Pasos (${steps.length})</label>${rows}<button class="btn btn-ghost btn-full btn-sm" onclick="addStep(${i})">＋ Agregar paso</button></div>`;
+  // Los pasos numerados vienen de modulos viejos como items:[{t,d}] (nunca
+  // s.steps) — misma normalizacion que renderItemsEd, si no se ven "0 pasos"
+  // aunque apptus si los muestre.
+  if(!s.items)s.items=[];
+  s.items=s.items.map(it=>typeof it==='string'?{label:it,text:it,t:it,desc:'',d:''}:it);
+  const items=s.items;
+  const rows=items.map((it,j)=>`
+    <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px">
+      <div style="width:26px;height:26px;border-radius:50%;background:var(--accent);color:#0F1923;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:8px">${j+1}</div>
+      <div style="flex:1">
+        <input type="text" value="${esc(it.label||it.text||it.t||'')}" placeholder="Título del paso" style="margin-bottom:6px" oninput="cur.slides[${i}].items[${j}].label=cur.slides[${i}].items[${j}].text=cur.slides[${i}].items[${j}].t=this.value">
+        <textarea style="min-height:50px;font-size:13px" placeholder="Descripción (opcional)" oninput="cur.slides[${i}].items[${j}].desc=cur.slides[${i}].items[${j}].d=this.value">${esc(it.desc||it.d||'')}</textarea>
+      </div>
+      <button class="btn btn-red btn-sm" onclick="delStep(${i},${j})" style="padding:6px 10px;margin-top:8px;flex-shrink:0">✕</button>
+    </div>`).join('');
+  return`<div class="field"><label>Pasos (${items.length})</label>${rows}<button class="btn btn-ghost btn-full btn-sm" onclick="addStep(${i})">＋ Agregar paso</button></div>`;
 }
 
 function addItem(i){if(!cur.slides[i].items)cur.slides[i].items=[];cur.slides[i].items.push({icon:'',label:'',text:'',desc:''});renderSlideBody(i);}
 function delItem(i,j){cur.slides[i].items.splice(j,1);renderSlideBody(i);}
-function addStep(i){if(!cur.slides[i].steps)cur.slides[i].steps=[];cur.slides[i].steps.push('');renderSlideBody(i);}
-function delStep(i,j){cur.slides[i].steps.splice(j,1);renderSlideBody(i);}
-function onTipoChange(i,val){const s=cur.slides[i];s.titulo=s.title=document.getElementById('se-titulo')?.value||s.titulo||'';s.cuerpo=s.msg=document.getElementById('se-cuerpo')?.value||s.cuerpo||'';s.tipo=s.type=val;if(!s.items)s.items=[];if(!s.steps)s.steps=[];renderSlideBody(i);}
+function addStep(i){if(!cur.slides[i].items)cur.slides[i].items=[];cur.slides[i].items.push({icon:'',label:'',text:'',t:'',desc:'',d:''});renderSlideBody(i);}
+function delStep(i,j){cur.slides[i].items.splice(j,1);renderSlideBody(i);}
+function onTipoChange(i,val){const s=cur.slides[i];s.titulo=s.title=document.getElementById('se-titulo')?.value||s.titulo||'';s.cuerpo=s.msg=document.getElementById('se-cuerpo')?.value||s.cuerpo||'';s.tipo=s.type=val;if(!s.items)s.items=[];renderSlideBody(i);}
 
 async function pickSlideImg(event,i){
   const f=event.target.files[0];if(!f)return;
