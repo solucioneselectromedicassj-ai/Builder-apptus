@@ -786,7 +786,7 @@ async function uploadFile(file,prefix){
 // ══════════════════════════════════════════
 // SLIDES
 // ══════════════════════════════════════════
-function slideTypeLabel(t){return{texto:'Texto',text:'Texto',imagen:'Imagen',image:'Imagen',notice:'Aviso',video:'Video',cards:'Tarjetas',checklist:'Checklist',steps:'Pasos',cols:'Columnas'}[t]||t||'Texto';}
+function slideTypeLabel(t){return{texto:'Texto',text:'Texto',imagen:'Imagen',image:'Imagen',notice:'Aviso',video:'Video',cards:'Tarjetas',checklist:'Checklist',steps:'Pasos',cols:'Columnas',device_universal:'Foto con zonas',device_equipo:'Foto con zonas',device_se3:'Foto con zonas (especial)',device_dfm:'Foto con zonas (especial)',leads_limb:'Especial (electrodos)',leads_chest:'Especial (electrodos)',keys_s5:'Especial (teclado)',paletas:'Especial (paletas)',sinc:'Especial (sincronismo)',aviso_mon:'Especial (aviso)',protocol123:'Especial (protocolo)',img_steps:'Especial (pasos+foto)'}[t]||t||'Texto';}
 
 function slidePreviewHTML(s){
   const lines=[];
@@ -844,13 +844,20 @@ function saveSlideBack(){
 
 const ITEM_TYPES=['cards','checklist','cols'];
 const STEP_TYPES=['steps'];
+const KNOWN_TIPOS=['texto','imagen','notice','video','cards','checklist','steps','device_universal'];
 
 function renderSlideBody(i){
   const s=cur.slides[i];const tipo=s.tipo||s.type||'texto';
   const usesItems=ITEM_TYPES.includes(tipo),usesSteps=STEP_TYPES.includes(tipo);
+  // Tipos especiales de apptus (device_se3, leads_limb, etc.) no tienen editor propio
+  // acá todavía. Si no le agregamos una <option> que quede "selected" con su valor
+  // real, el <select> cae en la primera opción (texto) y guardar el slide sin querer
+  // le pisa el tipo para siempre — así fue como se perdió "Partes del EDAN SE-3".
+  const isExotic=!KNOWN_TIPOS.includes(tipo);
   document.getElementById('slide-body').innerHTML=`
     <div class="field"><label>Tipo de slide</label>
       <select id="se-tipo" onchange="onTipoChange(${i},this.value)">
+        ${isExotic?`<option value="${esc(tipo)}" selected>⚠ Especial (${esc(tipo)}) — no cambiar</option>`:''}
         <option value="texto"     ${tipo==='texto'    ?'selected':''}>Texto libre</option>
         <option value="imagen"    ${tipo==='imagen'   ?'selected':''}>Imagen + texto</option>
         <option value="notice"    ${tipo==='notice'   ?'selected':''}>Aviso destacado</option>
@@ -858,8 +865,11 @@ function renderSlideBody(i){
         <option value="cards"     ${tipo==='cards'    ?'selected':''}>Tarjetas (ícono + texto)</option>
         <option value="checklist" ${tipo==='checklist'?'selected':''}>Lista de verificación</option>
         <option value="steps"     ${tipo==='steps'    ?'selected':''}>Pasos numerados</option>
+        <option value="device_universal" ${tipo==='device_universal'?'selected':''}>Foto con zonas interactivas</option>
       </select>
     </div>
+    ${isExotic?`<div style="font-size:12px;color:var(--warn);background:var(--s2);border-radius:8px;padding:8px 10px;margin:2px 0 12px">⚠ Este slide usa una función especial de apptus que todavía no se puede editar visualmente acá. Se conservó tal cual — el título y el texto sí se pueden editar, pero no toques "Tipo de slide" o se pierde esa función.</div>`:''}
+    ${tipo==='device_universal'?`<div style="font-size:12px;color:var(--t3);background:var(--s2);border-radius:8px;padding:8px 10px;margin:2px 0 12px">La foto y las zonas clickeables se configuran en la pestaña <b>Zonas</b> del módulo (compartida por todos los slides de este tipo). <button class="btn btn-ghost btn-sm" style="margin-top:6px" onclick="goBack('s-module');switchTab('zonas')">📍 Ir a marcar zonas →</button></div>`:''}
     <div class="field"><label>Título</label><input type="text" id="se-titulo" value="${esc(s.titulo||s.title||'')}" placeholder="Título del slide…"></div>
     ${!usesItems&&!usesSteps?`<div class="field"><label>Texto / Descripción</label><textarea id="se-cuerpo" style="min-height:110px" placeholder="Contenido…">${esc(s.cuerpo||s.msg||s.desc||'')}</textarea></div>`:''}
     ${tipo==='imagen'?`<div class="field"><label>Imagen</label>${s.imagen_url||s.img?`<img src="${s.imagen_url||s.img}" class="img-prev">`:''}
@@ -928,15 +938,22 @@ function addSectionOpt(i,qi){cur.slides[i].sectionQuiz[qi].opciones.push('');ren
 function delSectionOpt(i,qi,oi){const q=cur.slides[i].sectionQuiz[qi];q.opciones.splice(oi,1);if(q.correcta>=q.opciones.length)q.correcta=0;renderSectionQBody(i,qi);}
 
 function renderItemsEd(i,s){
-  const items=s.items||[];const isCards=(s.tipo||s.type)==='cards';
+  const isCards=(s.tipo||s.type)==='cards';
+  // Los modulos viejos (armados antes de que existiera este editor) guardan los
+  // items de checklist como strings sueltos, y las tarjetas con nombres cortos
+  // (ic/t/d) en vez de (icon/label|text/desc) — normalizamos a objeto aca mismo,
+  // si no se ven vacios en este editor aunque apptus si los sepa mostrar.
+  if(!s.items)s.items=[];
+  s.items=s.items.map(it=>typeof it==='string'?{text:it,label:it,icon:'',desc:''}:it);
+  const items=s.items;
   const rows=items.map((it,j)=>`
     <div style="background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px">
       <div style="display:flex;gap:8px;align-items:center;${isCards?'margin-bottom:6px':''}">
-        ${isCards?`<input type="text" value="${esc(it.icon||'')}" placeholder="🔧" style="width:50px;text-align:center;font-size:20px;flex-shrink:0;padding:6px" oninput="cur.slides[${i}].items[${j}].icon=this.value">`:''}
-        <input type="text" value="${esc(it.label||it.text||'')}" placeholder="${isCards?'Nombre de la tarjeta':'Ítem de la lista'}" style="flex:1" oninput="cur.slides[${i}].items[${j}].label=cur.slides[${i}].items[${j}].text=this.value">
+        ${isCards?`<input type="text" value="${esc(it.icon||it.ic||'')}" placeholder="🔧" style="width:50px;text-align:center;font-size:20px;flex-shrink:0;padding:6px" oninput="cur.slides[${i}].items[${j}].icon=cur.slides[${i}].items[${j}].ic=this.value">`:''}
+        <input type="text" value="${esc(it.label||it.text||it.t||'')}" placeholder="${isCards?'Nombre de la tarjeta':'Ítem de la lista'}" style="flex:1" oninput="cur.slides[${i}].items[${j}].label=cur.slides[${i}].items[${j}].text=cur.slides[${i}].items[${j}].t=this.value">
         <button class="btn btn-red btn-sm" onclick="delItem(${i},${j})" style="padding:6px 10px;flex-shrink:0">✕</button>
       </div>
-      ${isCards?`<textarea placeholder="Descripción (opcional)" style="min-height:50px;font-size:12px" oninput="cur.slides[${i}].items[${j}].desc=this.value">${esc(it.desc||'')}</textarea>`:''}
+      ${isCards?`<textarea placeholder="Descripción (opcional)" style="min-height:50px;font-size:12px" oninput="cur.slides[${i}].items[${j}].desc=cur.slides[${i}].items[${j}].d=this.value">${esc(it.desc||it.d||'')}</textarea>`:''}
     </div>`).join('');
   return`<div class="field"><label>${isCards?'Tarjetas':'Ítems'} (${items.length})</label>${rows}<button class="btn btn-ghost btn-full btn-sm" onclick="addItem(${i})">＋ Agregar ${isCards?'tarjeta':'ítem'}</button></div>`;
 }
