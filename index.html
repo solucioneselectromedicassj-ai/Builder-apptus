@@ -512,6 +512,18 @@ const STORAGE=`${SB_URL}/storage/v1/object/public/${BUCKET}`;
 const PASS='SEM2026super';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
 
+// Escribe en at_modulos a traves del edge function (service_role + password),
+// nunca con la anon key directo — la tabla tiene RLS de solo lectura, asi que
+// una escritura directa a REST ya no pasa. El edge function tambien es el que
+// incrementa "version" para que apptus sepa que hay contenido nuevo.
+async function apiPostModulo(payload){
+  const res=await fetch(`${SB_URL}/functions/v1/apptus-api?action=upsert_modulo`,{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({pw:PASS,...payload})
+  });
+  return res.json();
+}
+
 // ── ICONOS POR FAMILIA (mismo criterio que apptus/index.html) ──
 function familyIcon(cat){
   const attrs='width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em;display:inline-block"';
@@ -685,9 +697,10 @@ async function createMod(){
   const nombre=document.getElementById('new-nombre').value.trim();
   if(!nombre){toast('Escribí un nombre','err');return;}
   const catNew=document.getElementById('new-cat').value;
-  const p={nombre,sub:document.getElementById('new-sub').value.trim(),categoria:catNew,icono:familyIcon(catNew),activo:false,mods:[],quiz:[],mq:{},zonas:{imagen_base:'',hotspots:[]},created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
-  const{data,error}=await sb.from('at_modulos').insert(p).select().single();
-  if(error){toast('Error: '+error.message,'err');return;}
+  const p={nombre,sub:document.getElementById('new-sub').value.trim(),categoria:catNew,icono:familyIcon(catNew),activo:false,mods:[],quiz:[],mq:{},zonas:{imagen_base:'',hotspots:[]}};
+  const r=await apiPostModulo(p);
+  if(!r.ok){toast('Error: '+r.error,'err');return;}
+  const data=r.modulo;
   cur={data,slides:[],quiz:[],zonas:{imagen_base:'',hotspots:[]}};
   mods.unshift(data);renderList();
   goBack('s-list');openModScreen();
@@ -712,11 +725,11 @@ async function persistMod(activo){
   const nombre=document.getElementById('f-nombre').value.trim();
   if(!nombre)return{ok:false,error:'sin-nombre'};
   const catF=document.getElementById('f-cat').value;
-  const p={nombre,sub:document.getElementById('f-sub').value.trim(),categoria:catF,icono:familyIcon(catF),activo,mods:buildModsPayload(),quiz:buildQuizPayload(),mq:buildMqPayload(),zonas:cur.zonas,updated_at:new Date().toISOString()};
-  const{data,error}=cur.data.id
-    ?await sb.from('at_modulos').update(p).eq('id',cur.data.id).select().single()
-    :await sb.from('at_modulos').insert({...p,created_at:new Date().toISOString()}).select().single();
-  if(error)return{ok:false,error:error.message};
+  const p={nombre,sub:document.getElementById('f-sub').value.trim(),categoria:catF,icono:familyIcon(catF),activo,mods:buildModsPayload(),quiz:buildQuizPayload(),mq:buildMqPayload(),zonas:cur.zonas};
+  if(cur.data.id){p.id=cur.data.id;p.version=cur.data.version;}
+  const r=await apiPostModulo(p);
+  if(!r.ok)return{ok:false,error:r.error};
+  const data=r.modulo;
   cur.data=data;
   const idx=mods.findIndex(m=>m.id===data.id);
   if(idx>=0)mods[idx]={...mods[idx],...data};else mods.unshift(data);
