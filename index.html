@@ -716,7 +716,29 @@ function openModScreen(){
   switchTab('slides');
   renderSlideCards();renderZonaTab();renderQuizCards();
   goTo('s-module');
+  armModuleNavGuard();
 }
+
+// El boton "<-" de la app ya autoguarda (exitModule), pero el boton/gesto de
+// volver del celular no pasa por ahi: en una PWA sin rutas propias, el
+// navegador simplemente descarta la pantalla y con ella lo no guardado (asi
+// se perdio la edicion de Zonas al menos una vez). Mientras el editor de
+// modulo siga abierto en cualquier pantalla interna, interceptamos ese back
+// nativo y lo mandamos por el mismo camino que el boton de la app.
+let moduleNavGuard=false;
+function armModuleNavGuard(){
+  if(moduleNavGuard)return;
+  moduleNavGuard=true;
+  history.pushState({dcModuleGuard:true},'');
+}
+window.addEventListener('popstate',function(){
+  if(!moduleNavGuard)return;
+  if(screenStack.includes('s-module')){
+    history.pushState({dcModuleGuard:true},'');
+    exitModule();
+  }
+  moduleNavGuard=screenStack.includes('s-module');
+});
 
 // ── SAVE ──
 // Actually writes to Supabase. Shared by the explicit save buttons and by
