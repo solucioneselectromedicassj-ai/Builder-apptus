@@ -442,9 +442,9 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0;}
 
 <!-- LIBRARY -->
 <div class="screen" id="s-library">
-  <div class="topbar"><button class="back-btn" onclick="goBack('s-list')">←</button><div class="topbar-title">📚 Biblioteca de imágenes</div></div>
+  <div class="topbar"><button class="back-btn" onclick="goBack('s-list')">←</button><div class="topbar-title">📚 Biblioteca de slides</div></div>
   <div class="screen-body" style="padding-bottom:80px" id="lib-list">
-    <div class="empty-state"><div class="empty-icon">📚</div><div style="font-size:13px">Sin imágenes guardadas todavía.<br>Al guardar un módulo con zonas, se agregan aquí.</div></div>
+    <div class="empty-state"><div class="empty-icon">📚</div><div style="font-size:13px">Sin slides guardados todavía.<br>Tildá "Guardar en la biblioteca" al editar un slide para que aparezca acá.</div></div>
   </div>
   <div class="fab-wrap"><label class="fab fab-primary" style="cursor:pointer" title="Subir imagen a la biblioteca">＋<input type="file" accept="image/*" style="display:none" onchange="addToLibrary(event)"></label></div>
 </div>
@@ -974,6 +974,7 @@ async function saveSlideBack(){
     s.tipo=s.type=document.getElementById('se-tipo')?.value??s.tipo??'texto';
     s.cuerpo=s.msg=document.getElementById('se-cuerpo')?.value??s.cuerpo??'';
     s.video_url=s.url=document.getElementById('se-video')?.value??s.video_url??'';
+    if(document.getElementById('se-tolib')?.checked)saveSlideToLibraryEntry(s);
   }
   renderSlideCards();
   await autosave();
@@ -1022,7 +1023,12 @@ function renderSlideBody(i){
     <div class="field"><label>Título</label><input type="text" id="se-titulo" value="${esc(s.titulo||s.title||'')}" placeholder="Título del slide…"></div>
     ${!usesItems&&!usesSteps?`<div class="field"><label>Texto / Descripción</label><textarea id="se-cuerpo" style="min-height:110px" placeholder="Contenido…">${esc(s.cuerpo||s.msg||s.desc||'')}</textarea></div>`:''}
     ${tipo==='imagen'?`<div class="field"><label>Imagen</label>${s.imagen_url||s.img?`<img src="${s.imagen_url||s.img}" class="img-prev">`:''}
-      <label class="upload-lbl"><input type="file" accept="image/*" style="display:none" onchange="pickSlideImg(event,${i})">📁 ${s.imagen_url||s.img?'Cambiar':'Subir imagen'}</label></div>`:''}
+      <label class="upload-lbl"><input type="file" accept="image/*" style="display:none" onchange="pickSlideImg(event,${i})">📁 ${s.imagen_url||s.img?'Cambiar':'Subir imagen'}</label></div>
+      <div class="field" style="display:flex;align-items:center;gap:8px;margin-top:2px">
+        <input type="checkbox" id="se-interactive" ${s.interactive?'checked':''} style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer;flex-shrink:0" onchange="cur.slides[${i}].interactive=this.checked;renderSlideBody(${i})">
+        <label style="margin:0;cursor:pointer" onclick="document.getElementById('se-interactive').click()">Zonas clickeables (tocar la imagen para ver info)</label>
+      </div>
+      ${s.interactive?`<div style="font-size:12px;color:var(--t3);background:var(--s2);border-radius:8px;padding:8px 10px;margin:2px 0 12px">📍 ${(s.hotspots||[]).length} zona(s) marcada(s) en esta imagen. <button class="btn btn-ghost btn-sm" style="margin-top:6px" onclick="openLeadsEditorForSlide(${i})">📍 Marcar zonas en la imagen →</button></div>`:''}`:''}
     ${tipo==='video'?`<div class="field"><label>URL del video</label><input type="text" id="se-video" value="${esc(s.video_url||s.url||'')}" placeholder="https://youtube.com/…"></div>`:''}
     ${usesItems?renderItemsEd(i,s):''}
     ${usesSteps?renderStepsEd(i,s):''}
@@ -1031,6 +1037,10 @@ function renderSlideBody(i){
       <label style="margin:0;cursor:pointer" onclick="document.getElementById('se-sectionend').click()">Fin de sección — evaluación antes de seguir</label>
     </div>
     ${s.sectionEnd?renderSectionQuizEd(i,s):''}
+    <div class="field" style="display:flex;align-items:center;gap:8px;margin-top:10px">
+      <input type="checkbox" id="se-tolib" style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer;flex-shrink:0">
+      <label style="margin:0;cursor:pointer" onclick="document.getElementById('se-tolib').click()">💾 Guardar este slide en la biblioteca (para reusar en otro módulo)</label>
+    </div>
     <div style="height:14px"></div>
     <button class="btn btn-red btn-full" onclick="confirmDelSlide(${i});goBack('s-module')">🗑 Eliminar slide</button>`;
 }
@@ -1381,8 +1391,14 @@ function confirmDelZona(i){showModal('Eliminar zona',`¿Eliminás la zona "${cur
 // ══════════════════════════════════════════
 let leadsTipo=null,leadsData=null,leadsZonaIdx=null;
 let leadsDrawMode=false,leadsDrawStart=null,leadsDrawCurrent=null;
+// leadsMode/leadsSlideIdx let this same editor also mark zones on a single slide's own
+// image (foto+zonas propias de ESE slide, ver openLeadsEditorForSlide) en vez de escribir
+// siempre en la tabla compartida at_leads_zonas - así una imagen marcada puede quedar
+// pegada a un solo slide/módulo, no forzosamente compartida con todos.
+let leadsMode='shared',leadsSlideIdx=null;
 
 async function openLeadsEditor(tipo){
+  leadsMode='shared';leadsSlideIdx=null;
   leadsTipo=tipo;
   toast('Cargando…','info');
   try{
@@ -1392,6 +1408,18 @@ async function openLeadsEditor(tipo){
     if(!leadsData.hotspots)leadsData.hotspots=[];
   }catch(e){leadsData={imagen_base:'',hotspots:[]};}
   document.getElementById('leads-topbar-title').textContent=tipo==='limb'?'Extremidades':'Precordiales';
+  renderLeadsTab();
+  goTo('s-leads');
+}
+// Marca zonas clickeables directamente sobre la imagen de UN slide (checkbox "Zonas
+// clickeables" en el editor de slide tipo imagen) — reusa el mismo editor de arriba,
+// pero guarda en cur.slides[i] en vez de en la tabla compartida.
+function openLeadsEditorForSlide(i){
+  const s=cur.slides[i];
+  if(!s||!(s.imagen_url||s.img)){toast('Primero subí una imagen','err');return;}
+  leadsMode='slide';leadsSlideIdx=i;leadsTipo=null;
+  leadsData={imagen_base:s.imagen_url||s.img,hotspots:JSON.parse(JSON.stringify(s.hotspots||[]))};
+  document.getElementById('leads-topbar-title').textContent='Zonas de la imagen';
   renderLeadsTab();
   goTo('s-leads');
 }
@@ -1499,6 +1527,15 @@ async function saveLeadsZonaBack(){if(leadsZonaIdx!==null){leadsData.hotspots[le
 async function deleteLeadsZonaBack(){if(leadsZonaIdx!==null)leadsData.hotspots.splice(leadsZonaIdx,1);leadsZonaIdx=null;renderLeadsRects();renderLeadsCards();await saveLeadsZonas();goBack('s-leads');}
 function confirmDelLeadsZona(i){showModal('Eliminar zona',`¿Eliminás la zona "${leadsData.hotspots[i]?.nombre||i+1}"?`,async()=>{leadsData.hotspots.splice(i,1);renderLeadsRects();renderLeadsCards();await saveLeadsZonas();});}
 async function saveLeadsZonas(){
+  if(leadsMode==='slide'){
+    if(leadsSlideIdx===null||!cur||!cur.slides[leadsSlideIdx])return{ok:true};
+    const s=cur.slides[leadsSlideIdx];
+    s.imagen_url=s.img=leadsData.imagen_base;
+    s.hotspots=leadsData.hotspots;
+    s.interactive=true;
+    renderSlideCards();
+    return await autosave();
+  }
   if(!leadsTipo)return{ok:true};
   const res=await fetch(`${SB_URL}/functions/v1/apptus-api?action=leads_zonas_save`,{
     method:'POST',headers:{'Content-Type':'application/json'},
@@ -1508,7 +1545,15 @@ async function saveLeadsZonas(){
   if(r.ok)toast('✓ Guardado','ok');else toast('No se pudo guardar: '+r.error,'err');
   return r;
 }
-function exitLeadsEditor(){goBack('s-leads-menu');}
+function exitLeadsEditor(){
+  if(leadsMode==='slide'){
+    leadsMode='shared';leadsSlideIdx=null;
+    goBack('s-slide');
+    if(slideIdx!==null)renderSlideBody(slideIdx);
+    return;
+  }
+  goBack('s-leads-menu');
+}
 
 // ══════════════════════════════════════════
 // QUIZ
@@ -1617,6 +1662,29 @@ function saveZonaToLibrary(zonas,nombre){
   setLibrary(lib);
 }
 
+// Guarda un slide completo (tipo, texto, foto+zonas si es interactivo) en la
+// biblioteca para reusarlo en otro módulo. Al insertarlo despues queda como copia
+// independiente - cambiar la foto o mover los puntos ahí no toca ni este slide ni
+// la entrada de la biblioteca (checkbox "Guardar en biblioteca" del editor de slide).
+function saveSlideToLibraryEntry(s){
+  const lib=getLibrary();
+  const entry={
+    id:uid(),
+    nombre:s.titulo||s.title||'Slide sin título',
+    tipo:s.tipo||s.type||'texto',
+    titulo:s.titulo||s.title||'',
+    cuerpo:s.cuerpo||s.msg||'',
+    imagen_base:s.imagen_url||s.img||'',
+    interactive:!!s.interactive,
+    hotspots:JSON.parse(JSON.stringify(s.hotspots||[])),
+    items:JSON.parse(JSON.stringify(s.items||[])),
+    updatedAt:new Date().toISOString()
+  };
+  lib.unshift(entry);
+  setLibrary(lib);
+  toast('Guardado en la biblioteca','ok');
+}
+
 async function addToLibrary(event){
   const f=event.target.files[0];if(!f)return;
   toast('Subiendo…','info');
@@ -1638,7 +1706,7 @@ function renderLibrary(){
       <img class="lib-thumb" src="${l.imagen_base}" onerror="this.style.background='var(--s3)'">
       <div class="lib-info">
         <div class="lib-name">${esc(l.nombre||'Sin nombre')}</div>
-        <div class="lib-meta">${(l.hotspots||[]).length} zonas marcadas</div>
+        <div class="lib-meta">${l.tipo&&l.tipo!=='imagen'?slideTypeLabel(l.tipo)+' · ':''}${(l.hotspots||[]).length} zonas marcadas</div>
         <div style="display:flex;gap:7px;margin-top:8px">
           <button class="btn btn-primary btn-sm" onclick="insertFromLib(${i})">Insertar zonas</button>
           <button class="btn btn-ghost btn-sm" onclick="renameLib(${i})">✏</button>
@@ -1699,16 +1767,29 @@ function openBiblioteca(){
       <img class="lib-thumb" src="${l.imagen_base}" onerror="this.style.background='var(--s3)'">
       <div class="lib-info">
         <div class="lib-name">${esc(l.nombre||'Sin nombre')}</div>
-        <div class="lib-meta">Tocar para agregar como slide de imagen</div>
+        <div class="lib-meta">${l.interactive&&(l.hotspots||[]).length?`📍 ${l.hotspots.length} zonas · `:(l.tipo&&l.tipo!=='imagen'?slideTypeLabel(l.tipo)+' · ':'')}Tocar para insertar</div>
       </div>
     </div>`).join('');
   document.getElementById('bib-overlay').classList.add('on');
 }
+// Inserta una entrada de la biblioteca como slide nuevo del módulo actual - copia
+// independiente: el tipo, texto y (si tenía) foto+zonas quedan editables acá sin
+// tocar ni la entrada de la biblioteca ni el slide de origen.
 function insertLibAsSlide(i){
   const lib=getLibrary();const l=lib[i];
-  cur.slides.push({id:uid(),tipo:'imagen',type:'imagen',titulo:l.nombre||'',title:l.nombre||'',cuerpo:'',msg:'',imagen_url:l.imagen_base,img:l.imagen_base,video_url:'',items:[],steps:[]});
+  cur.slides.push({
+    id:uid(),tipo:l.tipo||'imagen',type:l.tipo||'imagen',
+    titulo:l.nombre||'',title:l.nombre||'',
+    cuerpo:l.cuerpo||'',msg:l.cuerpo||'',
+    imagen_url:l.imagen_base||'',img:l.imagen_base||'',
+    video_url:'',
+    items:JSON.parse(JSON.stringify(l.items||[])),steps:[],
+    hotspots:JSON.parse(JSON.stringify(l.hotspots||[])),
+    interactive:!!l.interactive
+  });
   document.getElementById('bib-overlay').classList.remove('on');
-  renderSlideCards();toast('Imagen insertada como slide','ok');
+  renderSlideCards();
+  toast(l.interactive?'Slide con zonas insertado — podés cambiar la foto y mover los puntos':'Slide insertado','ok');
 }
 
 // ── OBSERVATIONS ──
