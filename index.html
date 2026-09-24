@@ -693,16 +693,29 @@ async function selectMod(id){
   slideIdx=null;qIdx=null;zonaIdx=null;
   openModScreen();
 }
+// Mismo criterio que el slugify() de apptus, para que los id generados acá
+// combinen con los que ya existen (se3, dfm100, etc).
+function slugify(s){return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')||'modulo';}
+
 async function createMod(){
   const nombre=document.getElementById('new-nombre').value.trim();
   if(!nombre){toast('Escribí un nombre','err');return;}
   const catNew=document.getElementById('new-cat').value;
+  // at_modulos.id es NOT NULL y sin default - sin esto el guardado siempre
+  // fallaba con "null value in column id violates not-null constraint".
+  // Generamos el slug acá y evitamos pisar un módulo existente si coincide.
+  let id=slugify(nombre);
+  if(mods.some(m=>m.id===id)){
+    let n=2;
+    while(mods.some(m=>m.id===id+'_'+n))n++;
+    id=id+'_'+n;
+  }
   // icono NO va en el payload: la columna en Supabase es varchar(10) (piensa un
   // emoji corto) y familyIcon() devuelve un <svg> entero de +150 caracteres -
   // mandarlo hacia rompe el guardado con "value too long for type character
   // varying(10)". apptus tampoco lo usa para mostrar el icono: calcula el suyo
   // en el cliente a partir de la categoria (mismo familyIcon, mismo resultado).
-  const p={nombre,sub:document.getElementById('new-sub').value.trim(),categoria:catNew,activo:false,mods:[],quiz:[],mq:{},zonas:{imagen_base:'',hotspots:[]}};
+  const p={id,nombre,sub:document.getElementById('new-sub').value.trim(),categoria:catNew,activo:false,mods:[],quiz:[],mq:{},zonas:{imagen_base:'',hotspots:[]}};
   const r=await apiPostModulo(p);
   if(!r.ok){toast('Error: '+r.error,'err');return;}
   const data=r.modulo;
