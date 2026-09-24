@@ -351,7 +351,7 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0;}
 <!-- DERIVACIONES ECG (compartidas entre modulos - no pertenecen a un solo equipo) -->
 <div class="screen" id="s-leads-menu">
   <div class="topbar">
-    <button class="back-btn" onclick="goBack('s-list')">←</button>
+    <button class="back-btn" onclick="goBackOne()">←</button>
     <div class="topbar-title">Derivaciones ECG</div>
   </div>
   <div class="screen-body" style="padding:14px">
@@ -671,6 +671,11 @@ function goBack(to){
     });
   }
 }
+// Pops exactly one screen, wherever it was opened from — used by screens reachable
+// from more than one place (like Derivaciones ECG: from the module list, or from a
+// slide's "Ir a Derivaciones ECG" banner) where a fixed goBack(target) would skip
+// past whatever's actually underneath.
+function goBackOne(){goBack(screenStack[screenStack.length-2]);}
 
 // ── AUTH ──
 document.getElementById('login-pw').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
@@ -919,7 +924,7 @@ async function uploadFile(file,prefix){
 // ══════════════════════════════════════════
 // SLIDES
 // ══════════════════════════════════════════
-function slideTypeLabel(t){return{texto:'Texto',text:'Texto',imagen:'Imagen',image:'Imagen',notice:'Aviso',video:'Video',cards:'Tarjetas',checklist:'Checklist',steps:'Pasos',cols:'Columnas',device_universal:'Foto con zonas',device_equipo:'Foto con zonas',device_se3:'Foto con zonas (especial)',device_dfm:'Foto con zonas (especial)',leads_limb:'Especial (electrodos)',leads_chest:'Especial (electrodos)',keys_s5:'Especial (teclado)',paletas:'Especial (paletas)',sinc:'Especial (sincronismo)',aviso_mon:'Especial (aviso)',protocol123:'Especial (protocolo)',img_steps:'Especial (pasos+foto)'}[t]||t||'Texto';}
+function slideTypeLabel(t){return{texto:'Texto',text:'Texto',imagen:'Imagen',image:'Imagen',notice:'Aviso',video:'Video',cards:'Tarjetas',checklist:'Checklist',steps:'Pasos',cols:'Columnas',device_universal:'Foto con zonas',device_equipo:'Foto con zonas',device_se3:'Foto con zonas (especial)',device_dfm:'Foto con zonas (especial)',leads_limb:'Derivaciones ECG - Extremidades',leads_chest:'Derivaciones ECG - Precordiales',keys_s5:'Especial (teclado)',paletas:'Especial (paletas)',sinc:'Especial (sincronismo)',aviso_mon:'Especial (aviso)',protocol123:'Especial (protocolo)',img_steps:'Especial (pasos+foto)'}[t]||t||'Texto';}
 
 function slidePreviewHTML(s){
   const lines=[];
@@ -977,11 +982,15 @@ async function saveSlideBack(){
 
 const ITEM_TYPES=['cards','checklist','cols'];
 const STEP_TYPES=['steps'];
-const KNOWN_TIPOS=['texto','imagen','notice','video','cards','checklist','steps','device_universal'];
+const KNOWN_TIPOS=['texto','imagen','notice','video','cards','checklist','steps','device_universal','leads_limb','leads_chest'];
 // device_se3 y device_dfm son el mismo tipo "foto con zonas" que device_universal,
 // solo que con un nombre viejo - en apptus los tres llaman a la misma funcion de
 // render (deviceZoneSVG) y leen la foto/puntos de la pestaña Zonas del módulo.
 const ZONE_PHOTO_TIPOS=['device_universal','device_equipo','device_se3','device_dfm'];
+// leads_limb/leads_chest muestran la foto y zonas de "Derivaciones ECG" (arriba en
+// s-list), compartida entre todos los módulos que la usan - no es por módulo como
+// ZONE_PHOTO_TIPOS, así que un módulo nuevo con ECG puede sumar este slide y listo.
+const LEADS_TIPOS=['leads_limb','leads_chest'];
 
 function renderSlideBody(i){
   const s=cur.slides[i];const tipo=s.tipo||s.type||'texto';
@@ -1003,10 +1012,13 @@ function renderSlideBody(i){
         <option value="checklist" ${tipo==='checklist'?'selected':''}>Lista de verificación</option>
         <option value="steps"     ${tipo==='steps'    ?'selected':''}>Pasos numerados</option>
         <option value="device_universal" ${tipo==='device_universal'?'selected':''}>Foto con zonas interactivas</option>
+        <option value="leads_limb" ${tipo==='leads_limb'?'selected':''}>Derivaciones ECG - Extremidades</option>
+        <option value="leads_chest" ${tipo==='leads_chest'?'selected':''}>Derivaciones ECG - Precordiales</option>
       </select>
     </div>
     ${isExotic?`<div style="font-size:12px;color:var(--warn);background:var(--s2);border-radius:8px;padding:8px 10px;margin:2px 0 12px">⚠ Este slide usa una función especial de apptus que todavía no se puede editar visualmente acá. Se conservó tal cual — el título y el texto sí se pueden editar, pero no toques "Tipo de slide" o se pierde esa función.</div>`:''}
     ${ZONE_PHOTO_TIPOS.includes(tipo)?`<div style="font-size:12px;color:var(--t3);background:var(--s2);border-radius:8px;padding:8px 10px;margin:2px 0 12px">📷 Este slide muestra la foto y las zonas tocables de la pestaña <b>Zonas</b> del módulo — no hace falta insertar nada acá, subí la foto y marcá los puntos ahí y aparecen solos en este slide. <button class="btn btn-ghost btn-sm" style="margin-top:6px" onclick="goBack('s-module');switchTab('zonas')">📍 Ir a la pestaña Zonas →</button></div>`:''}
+    ${LEADS_TIPOS.includes(tipo)?`<div style="font-size:12px;color:var(--t3);background:var(--s2);border-radius:8px;padding:8px 10px;margin:2px 0 12px">🫀 Este slide muestra la foto y las zonas tocables de <b>Derivaciones ECG</b> — es la misma para todos los módulos que la usan (EDAN SE-3, E&amp;M C-12, y cualquier otro con ECG). Se edita una sola vez desde el listado de módulos. <button class="btn btn-ghost btn-sm" style="margin-top:6px" onclick="goTo('s-leads-menu')">🫀 Ir a Derivaciones ECG →</button></div>`:''}
     <div class="field"><label>Título</label><input type="text" id="se-titulo" value="${esc(s.titulo||s.title||'')}" placeholder="Título del slide…"></div>
     ${!usesItems&&!usesSteps?`<div class="field"><label>Texto / Descripción</label><textarea id="se-cuerpo" style="min-height:110px" placeholder="Contenido…">${esc(s.cuerpo||s.msg||s.desc||'')}</textarea></div>`:''}
     ${tipo==='imagen'?`<div class="field"><label>Imagen</label>${s.imagen_url||s.img?`<img src="${s.imagen_url||s.img}" class="img-prev">`:''}
