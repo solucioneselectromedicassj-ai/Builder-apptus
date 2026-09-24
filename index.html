@@ -120,6 +120,9 @@ select option{background:var(--s2);}
 #zona-container{position:relative;width:100%;touch-action:none;}
 #zona-img{display:block;width:100%;border-radius:8px;pointer-events:none;}
 #zona-overlay{position:absolute;inset:0;border-radius:8px;}
+#leads-container{position:relative;width:100%;touch-action:none;}
+#leads-img{display:block;width:100%;border-radius:8px;pointer-events:none;}
+#leads-overlay{position:absolute;inset:0;border-radius:8px;}
 .zona-rect{position:absolute;border:2.5px solid var(--accent);background:rgba(45,212,191,.15);cursor:pointer;transition:background .15s;}
 .zona-rect.sel{border-color:var(--warn);background:rgba(245,158,11,.22);}
 .zona-rect.preview-rect{border:2px dashed var(--accent);background:rgba(45,212,191,.1);pointer-events:none;}
@@ -225,6 +228,7 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0;}
     <div style="flex:1"><div class="topbar-title">AppTus Builder</div><div style="font-size:11px;color:var(--t3)">Módulos de orientación técnica</div></div>
     <button class="btn btn-ghost btn-sm" onclick="goTo('s-prompts')" style="font-size:11px">✦ Prompts</button>
     <button class="btn btn-ghost btn-sm" onclick="goTo('s-library')" style="font-size:12px">📚</button>
+    <button class="btn btn-ghost btn-sm" onclick="goTo('s-leads-menu')" style="font-size:12px">🫀</button>
     <button class="back-btn" onclick="doLogout()" style="font-size:16px">↩</button>
   </div>
   <div class="search-wrap"><input type="text" id="search" placeholder="🔍  Buscar módulos…" oninput="filterList()"></div>
@@ -341,6 +345,62 @@ hr{border:none;border-top:1px solid var(--border);margin:12px 0;}
     <div class="field"><label>Nombre de la zona</label><input type="text" id="zona-nombre" placeholder="ej: Panel de control"></div>
     <div class="field"><label>Descripción / Información</label><textarea id="zona-desc" style="min-height:130px" placeholder="Información que aparece al tocar esta zona…"></textarea></div>
     <button class="btn btn-red btn-full" style="margin-top:6px" onclick="deleteZonaBack()">🗑 Eliminar esta zona</button>
+  </div>
+</div>
+
+<!-- DERIVACIONES ECG (compartidas entre modulos - no pertenecen a un solo equipo) -->
+<div class="screen" id="s-leads-menu">
+  <div class="topbar">
+    <button class="back-btn" onclick="goBack('s-list')">←</button>
+    <div class="topbar-title">Derivaciones ECG</div>
+  </div>
+  <div class="screen-body" style="padding:14px">
+    <p style="font-size:12px;color:var(--t3);margin-bottom:14px">Foto y zonas tocables compartidas por todos los módulos que muestran electrodos (ej: EDAN SE-3, E&amp;M C-12). Se edita una sola vez acá y se ve en todos.</p>
+    <div class="item-card" onclick="openLeadsEditor('limb')" style="cursor:pointer">
+      <div class="item-card-body"><div class="item-title">Derivaciones de extremidades</div><div class="item-preview">RA / LA / RL / LL</div></div>
+    </div>
+    <div class="item-card" onclick="openLeadsEditor('chest')" style="cursor:pointer">
+      <div class="item-card-body"><div class="item-title">Derivaciones precordiales</div><div class="item-preview">V1 – V6</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- DERIVACIONES ECG: editor de foto + zonas (misma UX que ZONAS, pero para el par tipo/foto compartido) -->
+<div class="screen" id="s-leads">
+  <div class="topbar">
+    <button class="back-btn" onclick="exitLeadsEditor()">←</button>
+    <div class="topbar-title" id="leads-topbar-title">Derivaciones</div>
+    <button class="btn btn-primary btn-sm" onclick="exitLeadsEditor()">Guardar</button>
+  </div>
+  <div class="screen-body" style="padding:12px">
+    <div id="leads-draw-banner" class="draw-mode-banner" style="display:none">✏ Arrastrá el dedo en la imagen para marcar una zona</div>
+    <div id="leads-noimg" style="color:var(--t3);font-size:13px;text-align:center;padding:30px 0;display:none">Subí una foto real de los electrodos para marcar zonas interactivas</div>
+    <div id="leads-container" style="display:none">
+      <img id="leads-img" src="" alt="">
+      <div id="leads-overlay"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <label class="btn btn-ghost btn-sm" style="cursor:pointer;flex:1">
+        📁 Subir foto base
+        <input type="file" id="leads-file" accept="image/*" style="display:none" onchange="uploadLeadsBase(event)">
+      </label>
+      <button class="btn btn-primary btn-sm" id="leads-btn-draw" onclick="startLeadsDraw()" style="flex:1">+ Marcar zona</button>
+    </div>
+    <div class="content-list" style="padding:10px 0" id="leads-cards"></div>
+  </div>
+</div>
+
+<!-- DERIVACIONES ECG: editor de una zona (nombre/desc) -->
+<div class="screen" id="s-leads-zona">
+  <div class="topbar">
+    <button class="back-btn" onclick="saveLeadsZonaBack()">←</button>
+    <div class="topbar-title">Editar zona</div>
+    <button class="btn btn-primary btn-sm" onclick="saveLeadsZonaBack()">Guardar</button>
+  </div>
+  <div class="screen-body">
+    <div class="field"><label>Nombre de la zona</label><input type="text" id="leads-zona-nombre" placeholder="ej: RA - Brazo derecho"></div>
+    <div class="field"><label>Descripción / Información</label><textarea id="leads-zona-desc" style="min-height:130px" placeholder="Información que aparece al tocar esta zona…"></textarea></div>
+    <button class="btn btn-red btn-full" style="margin-top:6px" onclick="deleteLeadsZonaBack()">🗑 Eliminar esta zona</button>
   </div>
 </div>
 
@@ -1301,6 +1361,142 @@ function editZona(i){zonaIdx=i;const h=cur.zonas.hotspots[i];document.getElement
 async function saveZonaBack(){if(zonaIdx!==null){cur.zonas.hotspots[zonaIdx].nombre=document.getElementById('zona-nombre').value;cur.zonas.hotspots[zonaIdx].descripcion=document.getElementById('zona-desc').value;}renderZonaRects();renderZonaCards();await autosave();goBack('s-module');}
 async function deleteZonaBack(){if(zonaIdx!==null)cur.zonas.hotspots.splice(zonaIdx,1);zonaIdx=null;renderZonaRects();renderZonaCards();await autosave();goBack('s-module');}
 function confirmDelZona(i){showModal('Eliminar zona',`¿Eliminás la zona "${cur.zonas.hotspots[i]?.nombre||i+1}"?`,async()=>{cur.zonas.hotspots.splice(i,1);renderZonaRects();renderZonaCards();await autosave();});}
+
+// ══════════════════════════════════════════
+// DERIVACIONES ECG (zonas compartidas, no ligadas a un modulo) — misma UX que
+// la pestaña Zonas de arriba, pero independiente: la usan varios modulos
+// (EDAN SE-3, E&M C-12, etc.) asi que se edita en un solo lugar, no en cada uno.
+// ══════════════════════════════════════════
+let leadsTipo=null,leadsData=null,leadsZonaIdx=null;
+let leadsDrawMode=false,leadsDrawStart=null,leadsDrawCurrent=null;
+
+async function openLeadsEditor(tipo){
+  leadsTipo=tipo;
+  toast('Cargando…','info');
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/at_leads_zonas?select=tipo,imagen_base,hotspots&tipo=eq.${tipo}`,{headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`}});
+    const rows=await r.json();
+    leadsData=rows[0]||{imagen_base:'',hotspots:[]};
+    if(!leadsData.hotspots)leadsData.hotspots=[];
+  }catch(e){leadsData={imagen_base:'',hotspots:[]};}
+  document.getElementById('leads-topbar-title').textContent=tipo==='limb'?'Extremidades':'Precordiales';
+  renderLeadsTab();
+  goTo('s-leads');
+}
+function renderLeadsTab(){
+  const container=document.getElementById('leads-container');
+  const noimg=document.getElementById('leads-noimg');
+  if(leadsData.imagen_base){
+    document.getElementById('leads-img').src=leadsData.imagen_base;
+    container.style.display='block';noimg.style.display='none';
+  }else{container.style.display='none';noimg.style.display='block';}
+  renderLeadsRects();renderLeadsCards();
+}
+function renderLeadsRects(){
+  const overlay=document.getElementById('leads-overlay');
+  overlay.innerHTML='';
+  (leadsData.hotspots||[]).forEach((h,i)=>{
+    const div=document.createElement('div');
+    div.className='zona-rect'+(leadsZonaIdx===i?' sel':'');
+    div.style.left=((h.x||0)*100)+'%';div.style.top=((h.y||0)*100)+'%';
+    div.style.width=((h.w||.12)*100)+'%';div.style.height=((h.h||.10)*100)+'%';
+    const num=document.createElement('div');
+    num.className='zona-num'+(leadsZonaIdx===i?' sel':'');num.textContent=i+1;
+    div.appendChild(num);
+    div.onclick=e=>{e.stopPropagation();editLeadsZona(i);};
+    overlay.appendChild(div);
+  });
+}
+function renderLeadsCards(){
+  const el=document.getElementById('leads-cards');
+  const hs=leadsData.hotspots||[];
+  if(!hs.length){el.innerHTML='';return;}
+  el.innerHTML=hs.map((h,i)=>`
+    <div class="item-card">
+      <div class="item-card-body">
+        <div class="item-num">Zona ${i+1}</div>
+        <div class="item-title">${esc(h.nombre||'Sin nombre')}</div>
+        ${h.descripcion?`<div class="item-preview">${esc(h.descripcion)}</div>`:''}
+      </div>
+      <div class="item-actions">
+        <button class="item-action ia-edit" onclick="editLeadsZona(${i})">✏ Editar</button>
+        <button class="item-action ia-del" onclick="confirmDelLeadsZona(${i})">🗑</button>
+      </div>
+    </div>`).join('');
+}
+async function uploadLeadsBase(event){
+  const f=event.target.files[0];if(!f)return;
+  toast('Subiendo foto base…','info');
+  try{
+    const url=await uploadFile(f,'leads/');
+    leadsData.imagen_base=url;renderLeadsTab();
+    toast('Foto cargada. Ahora marcá las zonas.','ok');
+    await saveLeadsZonas();
+  }catch(e){toast('Error: '+e.message,'err');}
+}
+function startLeadsDraw(){
+  if(!leadsData.imagen_base){toast('Primero subí una foto base','err');return;}
+  leadsDrawMode=true;leadsDrawStart=null;leadsDrawCurrent=null;
+  document.getElementById('leads-draw-banner').style.display='block';
+  const container=document.getElementById('leads-container');
+  container.addEventListener('touchstart',onLeadsDrawStart,{passive:false});
+  container.addEventListener('touchmove',onLeadsDrawMove,{passive:false});
+  container.addEventListener('touchend',onLeadsDrawEnd,{passive:false});
+  container.addEventListener('mousedown',onLeadsDrawStartM);
+  container.addEventListener('mousemove',onLeadsDrawMoveM);
+  container.addEventListener('mouseup',onLeadsDrawEndM);
+}
+function stopLeadsDraw(){
+  leadsDrawMode=false;leadsDrawStart=null;leadsDrawCurrent=null;
+  document.getElementById('leads-draw-banner').style.display='none';
+  document.getElementById('leads-overlay').querySelectorAll('.preview-rect').forEach(e=>e.remove());
+  const c=document.getElementById('leads-container');
+  c.removeEventListener('touchstart',onLeadsDrawStart);c.removeEventListener('touchmove',onLeadsDrawMove);c.removeEventListener('touchend',onLeadsDrawEnd);
+  c.removeEventListener('mousedown',onLeadsDrawStartM);c.removeEventListener('mousemove',onLeadsDrawMoveM);c.removeEventListener('mouseup',onLeadsDrawEndM);
+}
+function getLeadsRelativePos(clientX,clientY){
+  const img=document.getElementById('leads-img');
+  const r=img.getBoundingClientRect();
+  return{x:Math.max(0,Math.min(1,(clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(clientY-r.top)/r.height))};
+}
+function onLeadsDrawStart(e){e.preventDefault();const t=e.touches[0];leadsDrawStart=getLeadsRelativePos(t.clientX,t.clientY);}
+function onLeadsDrawMove(e){e.preventDefault();if(!leadsDrawStart)return;const t=e.touches[0];leadsDrawCurrent=getLeadsRelativePos(t.clientX,t.clientY);showLeadsPreviewRect();}
+function onLeadsDrawEnd(e){e.preventDefault();if(!leadsDrawStart||!leadsDrawCurrent)return;finishLeadsDraw();stopLeadsDraw();}
+function onLeadsDrawStartM(e){leadsDrawStart=getLeadsRelativePos(e.clientX,e.clientY);}
+function onLeadsDrawMoveM(e){if(!leadsDrawStart)return;leadsDrawCurrent=getLeadsRelativePos(e.clientX,e.clientY);showLeadsPreviewRect();}
+function onLeadsDrawEndM(e){if(!leadsDrawStart||!leadsDrawCurrent)return;finishLeadsDraw();stopLeadsDraw();}
+function showLeadsPreviewRect(){
+  const overlay=document.getElementById('leads-overlay');
+  let pr=overlay.querySelector('.preview-rect');
+  if(!pr){pr=document.createElement('div');pr.className='preview-rect zona-rect';overlay.appendChild(pr);}
+  const x=Math.min(leadsDrawStart.x,leadsDrawCurrent.x),y=Math.min(leadsDrawStart.y,leadsDrawCurrent.y);
+  const w=Math.abs(leadsDrawCurrent.x-leadsDrawStart.x),h=Math.abs(leadsDrawCurrent.y-leadsDrawStart.y);
+  pr.style.left=(x*100)+'%';pr.style.top=(y*100)+'%';pr.style.width=(w*100)+'%';pr.style.height=(h*100)+'%';
+}
+function finishLeadsDraw(){
+  const x=Math.min(leadsDrawStart.x,leadsDrawCurrent.x),y=Math.min(leadsDrawStart.y,leadsDrawCurrent.y);
+  const w=Math.abs(leadsDrawCurrent.x-leadsDrawStart.x),h=Math.abs(leadsDrawCurrent.y-leadsDrawStart.y);
+  if(w<.03||h<.03){toast('Zona muy pequeña. Arrastrá más.','err');return;}
+  leadsData.hotspots.push({id:uid(),nombre:'',descripcion:'',x:+x.toFixed(4),y:+y.toFixed(4),w:+w.toFixed(4),h:+h.toFixed(4)});
+  leadsZonaIdx=leadsData.hotspots.length-1;
+  renderLeadsRects();renderLeadsCards();
+  editLeadsZona(leadsZonaIdx);
+}
+function editLeadsZona(i){leadsZonaIdx=i;const h=leadsData.hotspots[i];document.getElementById('leads-zona-nombre').value=h.nombre||'';document.getElementById('leads-zona-desc').value=h.descripcion||'';goTo('s-leads-zona');}
+async function saveLeadsZonaBack(){if(leadsZonaIdx!==null){leadsData.hotspots[leadsZonaIdx].nombre=document.getElementById('leads-zona-nombre').value;leadsData.hotspots[leadsZonaIdx].descripcion=document.getElementById('leads-zona-desc').value;}renderLeadsRects();renderLeadsCards();await saveLeadsZonas();goBack('s-leads');}
+async function deleteLeadsZonaBack(){if(leadsZonaIdx!==null)leadsData.hotspots.splice(leadsZonaIdx,1);leadsZonaIdx=null;renderLeadsRects();renderLeadsCards();await saveLeadsZonas();goBack('s-leads');}
+function confirmDelLeadsZona(i){showModal('Eliminar zona',`¿Eliminás la zona "${leadsData.hotspots[i]?.nombre||i+1}"?`,async()=>{leadsData.hotspots.splice(i,1);renderLeadsRects();renderLeadsCards();await saveLeadsZonas();});}
+async function saveLeadsZonas(){
+  if(!leadsTipo)return{ok:true};
+  const res=await fetch(`${SB_URL}/functions/v1/apptus-api?action=leads_zonas_save`,{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({pw:PASS,tipo:leadsTipo,imagen_base:leadsData.imagen_base,hotspots:leadsData.hotspots})
+  });
+  const r=await res.json();
+  if(r.ok)toast('✓ Guardado','ok');else toast('No se pudo guardar: '+r.error,'err');
+  return r;
+}
+function exitLeadsEditor(){goBack('s-leads-menu');}
 
 // ══════════════════════════════════════════
 // QUIZ
